@@ -24,13 +24,32 @@ package com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee;
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
+import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Amok;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ArtifactRecharge;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Blindness;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Chill;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Corrosion;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Cripple;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Frost;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.GreaterHaste;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Hex;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Invisibility;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MonkEnergy;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Recharging;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Regeneration;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Slow;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Terror;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Vulnerable;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Weakness;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.BloodParticle;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
+import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfBlastWave;
+import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
+import com.shatteredpixel.shatteredpixeldungeon.utils.PathFinder;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
@@ -42,6 +61,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.KindOfWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfForce;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRecharging;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -56,10 +77,95 @@ import com.watabou.noosa.Image;
 import com.watabou.noosa.Visual;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.Random;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Enchantment;
 
 import java.util.ArrayList;
 
 public class MeleeWeapon extends Weapon {
+
+	public enum Grade {
+		BROKEN, RUSTY, USED, MAINTAINED, FLAWLESS, MASTERWORK;
+		
+		public static Grade random() {
+			int roll = Random.Int(100);
+			if (roll < 40) return BROKEN;
+			if (roll < 70) return RUSTY;
+			if (roll < 85) return USED;
+			if (roll < 95) return MAINTAINED;
+			if (roll < 99) return FLAWLESS;
+			return MASTERWORK;
+		}
+	}
+
+	public Grade grade = Grade.random();
+	private static final String GRADE = "grade";
+	
+	public Element element = Element.random();
+	private static final String ELEMENT = "element";
+	
+	private int weaponLevel = 0;
+	private int weaponXP = 0;
+	private static final String WEAPON_LEVEL = "weapon_level";
+	private static final String WEAPON_XP = "weapon_xp";
+	
+	private ArrayList<Enchantment> additionalEnchantments = new ArrayList<>();
+	private static final String ADDITIONAL_ENCHANTMENTS = "additional_enchantments";
+	
+	private Blessing blessing;
+	private static final String BLESSING = "blessing";
+	
+	public ArrayList<Enchantment> getAllEnchantments() {
+		ArrayList<Enchantment> all = new ArrayList<>();
+		if (enchantment != null) all.add(enchantment);
+		all.addAll(additionalEnchantments);
+		return all;
+	}
+	
+	public void gainXP(int xp) {
+		if (grade != Grade.MASTERWORK) return;
+		weaponXP += xp;
+		while (weaponXP >= (weaponLevel + 1) * 100 && weaponLevel < 60) {
+			weaponLevel++;
+			// Unlock additional enchantments at certain levels
+			if (weaponLevel >= 10 && additionalEnchantments.size() < 1) {
+				additionalEnchantments.add(Enchantment.random());
+			} else if (weaponLevel >= 30 && additionalEnchantments.size() < 2) {
+				additionalEnchantments.add(Enchantment.random());
+			} else if (weaponLevel >= 60 && additionalEnchantments.size() < 3) {
+				additionalEnchantments.add(Enchantment.random());
+			}
+		}
+	}
+
+	@Override
+	public void storeInBundle(Bundle bundle) {
+		super.storeInBundle(bundle);
+		bundle.put(GRADE, grade.name());
+		bundle.put(ELEMENT, element.name());
+		bundle.put(WEAPON_LEVEL, weaponLevel);
+		bundle.put(WEAPON_XP, weaponXP);
+		bundle.put(ADDITIONAL_ENCHANTMENTS, additionalEnchantments);
+		bundle.put(BLESSING, blessing);
+	}
+
+	@Override
+	public void restoreFromBundle(Bundle bundle) {
+		super.restoreFromBundle(bundle);
+		if (bundle.contains(GRADE)) {
+			grade = Grade.valueOf(bundle.getString(GRADE));
+		}
+		if (bundle.contains(ELEMENT)) {
+			element = Element.valueOf(bundle.getString(ELEMENT));
+		}
+		weaponLevel = bundle.getInt(WEAPON_LEVEL);
+		weaponXP = bundle.getInt(WEAPON_XP);
+		additionalEnchantments = new ArrayList<>();
+		for (Bundlable b : bundle.getCollection(ADDITIONAL_ENCHANTMENTS)) {
+			if (b != null) additionalEnchantments.add((Enchantment) b);
+		}
+		blessing = (Blessing) bundle.get(BLESSING);
+	}
 
 	public static String AC_ABILITY = "ABILITY";
 
@@ -239,11 +345,81 @@ public class MeleeWeapon extends Weapon {
 		return 1; //abilities use 1 charge by default
 	}
 
+	@Override
+	public Weapon enchant(Enchantment ench) {
+		// For Masterwork weapons, convert curses to blessings
+		if (grade == Grade.MASTERWORK && ench != null && ench.curse()) {
+			blessing = Blessing.random();
+			// Don't set the curse enchantment, replace it with a random non-curse enchantment
+			ench = Enchantment.random();
+		}
+		
+		Weapon result = super.enchant(ench);
+		
+		// Chance to get a blessing based on weapon grade
+		float blessingChance = 0.15f; // 15% for non-Masterwork
+		if (grade == Grade.MASTERWORK) {
+			blessingChance = 1.0f; // 100% for Masterwork
+		}
+		
+		if (blessing == null && Random.Float() < blessingChance) {
+			blessing = Blessing.random();
+		}
+		
+		return result;
+	}
+
+	@Override
+	public Item upgrade(boolean enchant) {
+		if (grade == Grade.BROKEN && Random.Int(2) == 0) {
+			grade = Grade.RUSTY;
+			GLog.p("The upgrade scroll repaired the broken weapon into a rusty one!");
+			return this;
+		}
+		Item result = super.upgrade(enchant);
+		if (grade == Grade.MASTERWORK) {
+			cursed = false; // Masterwork is always blessed
+		}
+		return result;
+	}
+
 	public final float abilityChargeUse(Hero hero, Char target){
 		return baseChargeUse(hero, target);
 	}
 
 	public int tier;
+
+	@Override
+	public int min() {
+		int baseMin = min(0);
+		int lvl = level();
+		int addedMin = 0;
+		switch(grade) {
+			case BROKEN: addedMin = 0; break;
+			case RUSTY: addedMin = 0; break;
+			case USED: addedMin = lvl; break;
+			case MAINTAINED: addedMin = lvl; break;
+			case FLAWLESS: addedMin = lvl * 2; break;
+			case MASTERWORK: addedMin = lvl * 3; break;
+		}
+		return baseMin + addedMin;
+	}
+
+	@Override
+	public int max() {
+		int baseMax = max(0);
+		int lvl = level();
+		int addedMax = 0;
+		switch(grade) {
+			case BROKEN: addedMax = lvl; break;
+			case RUSTY: addedMax = lvl * (tier / 2); break;
+			case USED: addedMax = lvl * tier; break;
+			case MAINTAINED: addedMax = lvl * (tier + 1); break;
+			case FLAWLESS: addedMax = lvl * (tier + 2); break;
+			case MASTERWORK: addedMax = lvl * (tier * 2); break;
+		}
+		return baseMax + addedMax;
+	}
 
 	@Override
 	public int min(int lvl) {
@@ -258,11 +434,21 @@ public class MeleeWeapon extends Weapon {
 	}
 
 	public int STRReq(int lvl){
-		int req = STRReq(tier, lvl);
+		int req = STRReq(tier, 0);
+		int reduction = 0;
+		switch(grade) {
+			case BROKEN: reduction = 0; break;
+			case RUSTY: reduction = lvl / 2; break;
+			case USED: reduction = lvl; break;
+			case MAINTAINED: reduction = lvl; break;
+			case FLAWLESS: reduction = lvl; break;
+			case MASTERWORK: reduction = lvl * 2; break;
+		}
+		req -= reduction;
 		if (masteryPotionBonus){
 			req -= 2;
 		}
-		return req;
+		return Math.max(1, req);
 	}
 
 	private static boolean evaluatingTwinUpgrades = false;
@@ -291,7 +477,25 @@ public class MeleeWeapon extends Weapon {
 
 	@Override
 	public int damageRoll(Char owner) {
-		int damage = augment.damageFactor(super.damageRoll( owner ));
+		int damage;
+		
+		// Chaotic element: 1-100 damage instead of normal range
+		if (element == Element.CHAOTIC) {
+			damage = Random.Int(100) + 1;
+		} else {
+			damage = augment.damageFactor(super.damageRoll( owner ));
+		}
+		
+		float multiplier = 1.0f;
+		switch (grade) {
+			case BROKEN: multiplier = 0.50f; break;
+			case RUSTY: multiplier = 0.75f; break;
+			case USED: multiplier = 1.0f; break;
+			case MAINTAINED: multiplier = 1.15f; break;
+			case FLAWLESS: multiplier = 1.30f; break;
+			case MASTERWORK: multiplier = 1.50f; break;
+		}
+		damage = (int)(damage * multiplier);
 
 		if (owner instanceof Hero) {
 			int exStr = ((Hero)owner).STR() - STRReq();
@@ -303,9 +507,251 @@ public class MeleeWeapon extends Weapon {
 	}
 	
 	@Override
+	public int proc(Char attacker, Char defender, int damage) {
+		int finalDamage = damage;
+		
+		// Gain XP for Masterwork
+		gainXP(damage);
+		
+		// Handle blessing effects for all grades
+		if (blessing != null) {
+			finalDamage = blessing.proc(this, attacker, defender, finalDamage, grade == Grade.MASTERWORK ? weaponLevel : 0);
+		}
+
+		// Handle elemental effects
+		finalDamage = procElemental(attacker, defender, finalDamage);
+
+		float chanceMult = 1.0f;
+		switch(grade) {
+			case BROKEN: chanceMult = 0.1f; break;
+			case RUSTY: chanceMult = 0.5f; break;
+			case USED: chanceMult = 1.0f; break;
+			case MAINTAINED: chanceMult = 1.5f; break;
+			case FLAWLESS: chanceMult = 2.0f; break;
+			case MASTERWORK: chanceMult = 10.0f; break;
+		}
+
+		// Get all enchantments
+		ArrayList<Enchantment> allEnchants = getAllEnchantments();
+		
+		for (Enchantment ench : allEnchants) {
+			if (chanceMult < 1.0f) {
+				if (Random.Float() < chanceMult) {
+					finalDamage = ench.proc(this, attacker, defender, finalDamage);
+				}
+			} else {
+				finalDamage = ench.proc(this, attacker, defender, finalDamage);
+				if (chanceMult > 1.0f && Random.Float() < (chanceMult - 1.0f)) {
+					finalDamage = ench.proc(this, attacker, defender, finalDamage);
+				}
+			}
+		}
+		
+		return finalDamage;
+	}
+
+	@Override
+	public String name() {
+		String name = super.name();
+		
+		// Add grade prefix (capitalize first letter)
+		String gradeStr = grade.name().toLowerCase();
+		gradeStr = gradeStr.substring(0, 1).toUpperCase() + gradeStr.substring(1);
+		name = gradeStr + " " + name;
+		
+		// Add element (capitalize first letter)
+		if (element != Element.NONE) {
+			String elementStr = element.name().toLowerCase();
+			elementStr = elementStr.substring(0, 1).toUpperCase() + elementStr.substring(1);
+			name = elementStr + " " + name;
+		}
+		
+		// Add blessing
+		if (blessing != null) {
+			name += " of " + blessing.name();
+		}
+		
+		return name;
+	}
+
+	@Override
+	public int reachFactor(Char owner) {
+		int reach = super.reachFactor(owner);
+		// Zephyr element: +1 reach
+		if (element == Element.ZEPHYR) {
+			reach += 1;
+		}
+		return reach;
+	}
+
+	private int procElemental(Char attacker, Char defender, int damage) {
+		if (element == Element.NONE) return damage;
+
+		switch (element) {
+			case ABYSSAL:
+				// Blind enemy and extinguish lights
+				if (Random.Int(4) == 0) {
+					Buff.prolong(defender, Blindness.class, Blindness.DURATION);
+				}
+				break;
+			case LUMINOUS:
+				// Holy damage to undead/demonic, reveal invisibility
+				if (defender.properties().contains(Char.Property.UNDEAD) || 
+					defender.properties().contains(Char.Property.DEMONIC)) {
+					damage = (int)(damage * 1.5f); // Holy damage bonus
+				}
+				// Reveal invisibility
+				Buff.detach(defender, Invisibility.class);
+				break;
+			case SANGUINE:
+				// Damage based on missing health, create blood pools
+				if (attacker instanceof Hero) {
+					Hero hero = (Hero) attacker;
+					float healthPercent = 1.0f - ((float)hero.HP / hero.HT);
+					damage = (int)(damage * (1.0f + healthPercent)); // More damage when low HP
+				}
+				// Heal attacker from blood
+				if (Random.Int(4) == 0 && attacker instanceof Hero) {
+					int heal = Math.max(1, damage / 10);
+					attacker.HP = Math.min(attacker.HT, attacker.HP + heal);
+					attacker.sprite.emitter().burst(BloodParticle.FACTORY, 5);
+				}
+				break;
+			case CHAOTIC:
+				// Random damage variance and random debuffs
+				// Damage variance is handled in damageRoll override
+				// Random debuff
+				if (Random.Int(6) == 0) {
+					Class<? extends Buff> debuff = Random.oneOf(
+						Weakness.class, Vulnerable.class, Cripple.class, 
+						Blindness.class, Terror.class, Slow.class, Hex.class
+					);
+					Buff.affect(defender, debuff, 3 + buffedLvl());
+				}
+				break;
+			case INFERNAL:
+				// Fire damage, prevent regeneration
+				if (Random.Int(3) == 0) {
+					Buff.affect(defender, Burning.class).reignite(defender);
+				}
+				break;
+			case GLACIAL:
+				// Slow movement, can freeze
+				if (Random.Int(4) == 0) {
+					Buff.affect(defender, Frost.class, Frost.DURATION);
+				} else if (Random.Int(8) == 0) {
+					Buff.prolong(defender, Chill.class, Chill.DURATION * 2);
+				}
+				break;
+			case GILDED:
+				// More gold drops, damage from gold
+				if (attacker instanceof Hero) {
+					Hero hero = (Hero) attacker;
+					int goldBonus = hero.belongings.gold / 10; // 10% of gold as damage
+					damage += goldBonus;
+				}
+				break;
+			case VOLTAIC:
+				// Chain lightning
+				if (Random.Int(5) == 0) {
+					// Simple chain lightning: damage nearby enemies
+					for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
+						int pos = defender.pos + PathFinder.NEIGHBOURS8[i];
+						Char ch = Actor.findChar(pos);
+						if (ch != null && ch != attacker && ch.alignment != attacker.alignment) {
+							ch.damage(damage / 3, this);
+							ch.sprite.centerEmitter().burst(SparkParticle.FACTORY, 3);
+						}
+					}
+				}
+				break;
+			case CAUSTIC:
+				// Reduce enemy armor
+				if (Random.Int(4) == 0) {
+					Buff.affect(defender, Corrosion.class).set(5f, 1 + buffedLvl() / 3);
+				}
+				break;
+			case ZEPHYR:
+				// Extended reach (handled in reach factor)
+				break;
+			case TERRAN:
+				// Knockback
+				if (Random.Int(6) == 0) {
+					Ballistica trajectory = new Ballistica(attacker.pos, defender.pos, Ballistica.PROJECTILE);
+					WandOfBlastWave.throwChar(defender, trajectory, 1, false, false, this);
+				}
+				break;
+		}
+		return damage;
+	}
+
+	@Override
+	public float accuracyFactor(Char owner, Char target) {
+		Enchantment temp = null;
+		if (grade == Grade.MASTERWORK && enchantment != null && enchantment.curse()) {
+			temp = enchantment;
+			enchantment = null; // Suppresses original curse's negative accuracy modifiers.
+		}
+		float acc = super.accuracyFactor(owner, target);
+		if (temp != null) enchantment = temp;
+
+		if (grade == Grade.MAINTAINED) acc *= 1.1f;
+		if (grade == Grade.MASTERWORK) acc *= 1.5f;
+
+		// Guided blessing provides guaranteed hits
+		if (blessing instanceof Guided) {
+			if (Random.Int(4) == 0) return Float.POSITIVE_INFINITY;
+		}
+		return acc;
+	}
+
+	@Override
+	public ItemSprite.Glowing glowing() {
+		// Show blessing glow for blessed weapons
+		if (blessing != null) {
+			return blessing.glowing();
+		}
+		// Show elemental glow for elemental weapons
+		if (element != Element.NONE) {
+			return getElementalGlowing();
+		}
+		return super.glowing();
+	}
+
+	private ItemSprite.Glowing getElementalGlowing() {
+		switch (element) {
+			case ABYSSAL: return new ItemSprite.Glowing(0x000000); // Black
+			case LUMINOUS: return new ItemSprite.Glowing(0xFFFFFF); // White
+			case SANGUINE: return new ItemSprite.Glowing(0x8B0000); // Dark red
+			case CHAOTIC: return new ItemSprite.Glowing(0xFF00FF); // Magenta
+			case INFERNAL: return new ItemSprite.Glowing(0xFF4500); // Orange red
+			case GLACIAL: return new ItemSprite.Glowing(0x00BFFF); // Deep sky blue
+			case GILDED: return new ItemSprite.Glowing(0xFFD700); // Gold
+			case VOLTAIC: return new ItemSprite.Glowing(0x00FFFF); // Cyan
+			case CAUSTIC: return new ItemSprite.Glowing(0x32CD32); // Lime green
+			case ZEPHYR: return new ItemSprite.Glowing(0xF0F8FF); // Alice blue
+			case TERRAN: return new ItemSprite.Glowing(0x8B4513); // Saddle brown
+			default: return null;
+		}
+	}
+
+	@Override
+	public float delay() {
+		float d = super.delay();
+		if (grade == Grade.FLAWLESS) d *= 0.9f;
+		if (grade == Grade.MASTERWORK) d *= 0.75f;
+		return d;
+	}
+
+	@Override
 	public String info() {
 
 		String info = super.info();
+		
+		info += "\n\nQuality Grade: " + grade.name();
+		if (grade == Grade.MASTERWORK) {
+			info += " (Level " + weaponLevel + ")";
+		}
 
 		if (levelKnown) {
 			info += "\n\n" + Messages.get(MeleeWeapon.class, "stats_known", tier, augment.damageFactor(min()), augment.damageFactor(max()), STRReq());
@@ -346,6 +792,14 @@ public class MeleeWeapon extends Weapon {
 			info += " " + enchantment.desc();
 		} else if (enchantHardened){
 			info += "\n\n" + Messages.get(Weapon.class, "hardened_no_enchant");
+		}
+
+		// Additional enchantments for Masterwork
+		if (grade == Grade.MASTERWORK && !additionalEnchantments.isEmpty()) {
+			for (Enchantment ench : additionalEnchantments) {
+				info += "\n\n" + Messages.capitalize(Messages.get(Weapon.class, "enchanted", ench.name()));
+				info += " " + ench.desc();
+			}
 		}
 
 		if (cursed && isEquipped( Dungeon.hero )) {

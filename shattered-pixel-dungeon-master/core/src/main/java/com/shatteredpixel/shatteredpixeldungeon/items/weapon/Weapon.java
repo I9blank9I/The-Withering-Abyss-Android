@@ -115,6 +115,7 @@ abstract public class Weapon extends KindOfWeapon {
 	}
 	
 	public Augment augment = Augment.NONE;
+	public WeaponQuality quality = WeaponQuality.USED;
 
 	protected int usesToID(){
 		return 20;
@@ -429,6 +430,22 @@ abstract public class Weapon extends KindOfWeapon {
 		}
 		level(n);
 
+		// Set weapon quality
+		int qualityRoll = Random.Int(1, 100);
+		if (qualityRoll <= 40) {
+			quality = WeaponQuality.BROKEN;
+		} else if (qualityRoll <= 70) {
+			quality = WeaponQuality.RUSTY;
+		} else if (qualityRoll <= 85) {
+			quality = WeaponQuality.USED;
+		} else if (qualityRoll <= 95) {
+			quality = WeaponQuality.MAINTAINED;
+		} else if (qualityRoll <= 99) {
+			quality = WeaponQuality.FLAWLESS;
+		} else {
+			quality = WeaponQuality.MASTERWORK;
+		}
+
 		//we use a separate RNG here so that variance due to things like parchment scrap
 		//does not affect levelgen
 		Random.pushGenerator(Random.Long());
@@ -496,6 +513,25 @@ abstract public class Weapon extends KindOfWeapon {
 
 	public boolean hasCurseEnchant(){
 		return enchantment != null && enchantment.curse();
+	}
+
+	public float getQualityEnchantmentMultiplier() {
+		switch (quality) {
+			case BROKEN:
+				return 0.1f;
+			case RUSTY:
+				return 0.5f;
+			case USED:
+				return 1.0f;
+			case MAINTAINED:
+				return 1.5f;
+			case FLAWLESS:
+				return 2.0f;
+			case MASTERWORK:
+				return 10.0f; // "almost every hit"
+			default:
+				return 1.0f;
+		}
 	}
 
 	private static ItemSprite.Glowing HOLY = new ItemSprite.Glowing( 0xFFFF00 );
