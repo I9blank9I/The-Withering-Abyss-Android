@@ -333,25 +333,25 @@ public class ItemSpriteSheet {
 	static{
 		assignItemRect(SPIRIT_BOW,      16, 16);
 		
-		assignIconRect( THROWING_SPIKE,  11, 10);
-		assignIconRect( THROWING_KNIFE,  12, 13);
-		assignIconRect( THROWING_STONE,  12, 10);
+		assignItemRect( THROWING_SPIKE,  11, 10);
+		assignItemRect( THROWING_KNIFE,  12, 13);
+		assignItemRect( THROWING_STONE,  12, 10);
 		
-		assignIconRect( FISHING_SPEAR,   11, 11);
-		assignIconRect( SHURIKEN,        12, 12);
-		assignIconRect( THROWING_CLUB,   12, 12);
+		assignItemRect( FISHING_SPEAR,   11, 11);
+		assignItemRect( SHURIKEN,        12, 12);
+		assignItemRect( THROWING_CLUB,   12, 12);
 		
-		assignIconRect( THROWING_SPEAR,  13, 13);
-		assignIconRect( BOLAS,           15, 14);
-		assignIconRect( KUNAI,           15, 15);
+		assignItemRect( THROWING_SPEAR,  13, 13);
+		assignItemRect( BOLAS,           15, 14);
+		assignItemRect( KUNAI,           15, 15);
 		
-		assignIconRect( JAVELIN,         16, 16);
-		assignIconRect( TOMAHAWK,        13, 13);
-		assignIconRect( BOOMERANG,       14, 14);
+		assignItemRect( JAVELIN,         16, 16);
+		assignItemRect( TOMAHAWK,        13, 13);
+		assignItemRect( BOOMERANG,       14, 14);
 		
-		assignIconRect( TRIDENT,         16, 16);
-		assignIconRect( THROWING_HAMMER, 12, 12);
-		assignIconRect( FORCE_CUBE,      11, 12);
+		assignItemRect( TRIDENT,         16, 16);
+		assignItemRect( THROWING_HAMMER, 12, 12);
+		assignItemRect( FORCE_CUBE,      11, 12);
 	}
 	
 	public static final int DARTS    =                                      xy(1, 11);  //16 slots

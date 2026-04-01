@@ -48,8 +48,9 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Weakness;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.BloodParticle;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfBlastWave;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Guided;
 import com.shatteredpixel.shatteredpixeldungeon.mechanics.Ballistica;
-import com.shatteredpixel.shatteredpixeldungeon.utils.PathFinder;
+import com.watabou.utils.PathFinder;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
@@ -77,8 +78,8 @@ import com.watabou.noosa.Image;
 import com.watabou.noosa.Visual;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.Bundlable;
 import com.watabou.utils.Random;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.enchantments.Enchantment;
 
 import java.util.ArrayList;
 
@@ -104,6 +105,9 @@ public class MeleeWeapon extends Weapon {
 	public Element element = Element.random();
 	private static final String ELEMENT = "element";
 	
+	public Blessing blessing;
+	private static final String BLESSING = "blessing";
+	
 	private int weaponLevel = 0;
 	private int weaponXP = 0;
 	private static final String WEAPON_LEVEL = "weapon_level";
@@ -111,9 +115,6 @@ public class MeleeWeapon extends Weapon {
 	
 	private ArrayList<Enchantment> additionalEnchantments = new ArrayList<>();
 	private static final String ADDITIONAL_ENCHANTMENTS = "additional_enchantments";
-	
-	private Blessing blessing;
-	private static final String BLESSING = "blessing";
 	
 	public ArrayList<Enchantment> getAllEnchantments() {
 		ArrayList<Enchantment> all = new ArrayList<>();
@@ -622,11 +623,13 @@ public class MeleeWeapon extends Weapon {
 				// Damage variance is handled in damageRoll override
 				// Random debuff
 				if (Random.Int(6) == 0) {
-					Class<? extends Buff> debuff = Random.oneOf(
-						Weakness.class, Vulnerable.class, Cripple.class, 
-						Blindness.class, Terror.class, Slow.class, Hex.class
+					// Using a raw 'Class' bypasses the strict generic check
+					Class debuff = (Class) Random.oneOf(
+							Weakness.class, Vulnerable.class, Cripple.class,
+							Blindness.class, Terror.class, Slow.class, Hex.class
 					);
-					Buff.affect(defender, debuff, 3 + buffedLvl());
+					// We add an 'f' to 3 so Java knows it is a float!
+					Buff.affect(defender, debuff, 3f + buffedLvl());
 				}
 				break;
 			case INFERNAL:
@@ -646,8 +649,7 @@ public class MeleeWeapon extends Weapon {
 			case GILDED:
 				// More gold drops, damage from gold
 				if (attacker instanceof Hero) {
-					Hero hero = (Hero) attacker;
-					int goldBonus = hero.belongings.gold / 10; // 10% of gold as damage
+					int goldBonus = Dungeon.gold / 10; // 10% of total gold as damage
 					damage += goldBonus;
 				}
 				break;
@@ -736,10 +738,10 @@ public class MeleeWeapon extends Weapon {
 	}
 
 	@Override
-	public float delay() {
-		float d = super.delay();
-		if (grade == Grade.FLAWLESS) d *= 0.9f;
-		if (grade == Grade.MASTERWORK) d *= 0.75f;
+	public float delayFactor(Char owner) {
+		float d = super.delayFactor(owner);
+		if (grade == Grade.FLAWLESS) d *= 0.9f; // 10% faster attacks!
+		if (grade == Grade.MASTERWORK) d *= 0.75f; // 25% faster attacks!
 		return d;
 	}
 

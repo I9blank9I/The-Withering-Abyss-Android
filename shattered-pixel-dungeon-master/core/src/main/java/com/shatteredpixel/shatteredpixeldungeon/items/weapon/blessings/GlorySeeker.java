@@ -6,58 +6,63 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.GreaterHaste;
+import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.TimeStop;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
+import com.shatteredpixel.shatteredpixeldungeon.effects.particles.SparkParticle;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
+import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
 public class GlorySeeker extends Blessing {
 
     @Override
     public int proc(Weapon weapon, Char attacker, Char defender, int damage, int weaponLevel) {
-        if (Random.Int(20) == 0 && attacker instanceof Hero) {
-            // Shout and alert all enemies on floor
+
+        // 1 in 20 chance to trigger the Glory!
+        if (attacker instanceof Hero && Random.Int(20) == 0) {
+
+            // 1. THE SHOUT: Alert all enemies on the floor
             for (Char mob : Dungeon.level.mobs) {
-                if (mob.alignment == Char.Alignment.ENEMY && mob != defender) {
-                    mob.aggro(attacker);
+                if (mob instanceof Mob) {
+                    ((Mob) mob).beckon(attacker.pos);
                 }
             }
-            Buff.affect(attacker, GreaterHaste.class).set(15);
+
+            // 2. THE BUFFS: Haste or Time Stop (Level 60+)
+            if (weaponLevel >= 60) {
+                 Buff.affect(attacker, TimeStop.class).set(10);
+            } else {
+                 Buff.affect(attacker, GreaterHaste.class).set(15);
+            }
+
+            // 3. THE SHIELD: Gain shield based on enemy count
             int shield = 0;
             for (Char mob : Dungeon.level.mobs) {
                 if (mob.alignment == Char.Alignment.ENEMY) {
-                    shield += mob.maxHP / 10;
+                    shield += mob.HT / 10;
                 }
             }
             Buff.affect(attacker, Barrier.class).setShield(shield);
 
-            // Level 10+: Cleave
+            // 4. LEVEL 10+: Cleave (Hit adjacent enemies)
             if (weaponLevel >= 10) {
-                // Hit adjacent enemies
-                for (int i = -1; i <= 1; i++) {
-                    for (int j = -1; j <= 1; j++) {
-                        if (i == 0 && j == 0) continue;
-                        int pos = defender.pos + i + j * Dungeon.level.width();
-                        Char adj = Actor.findChar(pos);
-                        if (adj != null && adj.alignment == Char.Alignment.ENEMY) {
-                            adj.damage(damage, attacker);
-                        }
+                for (int i = 0; i < PathFinder.NEIGHBOURS8.length; i++) {
+                    int pos = defender.pos + PathFinder.NEIGHBOURS8[i];
+                    Char adj = Actor.findChar(pos);
+                    if (adj != null && adj.alignment == Char.Alignment.ENEMY) {
+                        adj.damage(damage, attacker);
                     }
                 }
             }
 
-            // Level 30+: Blade Beams - placeholder
+            // 5. LEVEL 30+: Blade Beams
             if (weaponLevel >= 30) {
-                // Piercing projectile logic would go here
+                damage *= 2;
             }
-
-            // Level 60+: Time Stop - placeholder
-            if (weaponLevel >= 60) {
-                // Time stop logic would go here
-            }
-
-            return damage;
         }
+
         return damage;
     }
 

@@ -1,24 +1,3 @@
-/*
- * Pixel Dungeon
- * Copyright (C) 2012-2015 Oleg Dolya
- *
- * Shattered Pixel Dungeon
- * Copyright (C) 2014-2026 Evan Debenham
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
-
 package com.shatteredpixel.shatteredpixeldungeon.services.news;
 
 import com.badlogic.gdx.Application;
@@ -45,48 +24,29 @@ public class News {
 	private static Date lastCheck = null;
 	private static final long CHECK_DELAY = 1000*60*60; //1 hour
 
+	// --- MODIFIED: Stripped out the internet check ---
 	public static void checkForNews(){
-		if (!supportsNews()) return;
-		if (lastCheck != null && (new Date().getTime() - lastCheck.getTime()) < CHECK_DELAY) return;
-
-		boolean useHTTPS = true;
-		if (Gdx.app.getType() == Application.ApplicationType.Android && Gdx.app.getVersion() < 20){
-			useHTTPS = false; //android versions below 5.0 don't support TLSv1.2 by default
-		}
-		service.checkForArticles(!SPDSettings.WiFi(), useHTTPS, new NewsService.NewsResultCallback() {
-			@Override
-			public void onArticlesFound(ArrayList<NewsArticle> articles) {
-				lastCheck = new Date();
-				News.articles = articles;
-			}
-
-			@Override
-			public void onConnectionFailed() {
-				lastCheck = null;
-				News.articles = null;
-			}
-		});
-
+		lastCheck = null;
+		News.articles = null;
 	}
 
 	private static ArrayList<NewsArticle> articles;
 
+	// --- MODIFIED: Always tells the game the list is empty ---
 	public static synchronized boolean articlesAvailable(){
-		return articles != null && !articles.isEmpty();
+		return false;
 	}
 
 	public static synchronized ArrayList<NewsArticle> articles(){
+		if (articles == null) {
+			return new ArrayList<>();
+		}
 		return new ArrayList<>(articles);
 	}
 
+	// --- MODIFIED: Always returns 0 to disable the notification badge ---
 	public static synchronized int unreadArticles(Date lastRead) {
-		int unread = 0;
-		if (articles != null) {
-			for (NewsArticle article : articles) {
-				if (article.date.after(lastRead)) unread++;
-			}
-		}
-		return unread;
+		return 0;
 	}
 
 	public static synchronized void clearArticles(){
@@ -102,10 +62,10 @@ public class News {
 			//"ICON: <name of enum constant in Icons.java>"
 			if (article.icon.startsWith("ICON: ")){
 				return Icons.get(Icons.valueOf(article.icon.replace("ICON: ", "")));
-			//"ITEM: <integer constant corresponding to values in ItemSpriteSheet.java>"
+				//"ITEM: <integer constant corresponding to values in ItemSpriteSheet.java>"
 			} else if (article.icon.startsWith("ITEM: ")){
 				return new ItemSprite(Integer.parseInt(article.icon.replace("ITEM: ", "")));
-			//"<asset filename>, <tx left>, <tx top>, <width>, <height>"
+				//"<asset filename>, <tx left>, <tx top>, <width>, <height>"
 			} else {
 				String[] split = article.icon.split(", ");
 				return new Image( split[0],
@@ -115,7 +75,7 @@ public class News {
 						Integer.parseInt(split[4]));
 			}
 
-		//if we run into any formatting errors (or icon is null), default to the news icon
+			//if we run into any formatting errors (or icon is null), default to the news icon
 		} catch (Exception e){
 			if (article.icon != null) ShatteredPixelDungeon.reportException(e);
 			return Icons.get(Icons.NEWS);

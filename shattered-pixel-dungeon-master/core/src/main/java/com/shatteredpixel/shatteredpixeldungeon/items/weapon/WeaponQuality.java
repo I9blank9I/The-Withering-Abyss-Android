@@ -1,27 +1,24 @@
-/*
- * This file is part of The Withering Abyss.
- *
- * The Withering Abyss is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * The Withering Abyss is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 package com.shatteredpixel.shatteredpixeldungeon.items.weapon;
 
+import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+
 public enum WeaponQuality {
-    BROKEN,
-    RUSTY,
-    USED,
-    MAINTAINED,
-    FLAWLESS,
-    MASTERWORK
-}
+    BROKEN(0.5f, 0.1f),
+    RUSTY(0.75f, 0.5f),
+    USED(1.0f, 1.0f),
+    MAINTAINED(1.15f, 1.5f),
+    FLAWLESS(1.30f, 2.0f),
+    MASTERWORK(1.50f, 10.0f);
+
+    public final float damageMultiplier;
+    public final float procMultiplier;
+
+    WeaponQuality(float damageMultiplier, float procMultiplier) {
+        this.damageMultiplier = damageMultiplier;
+        this.procMultiplier = procMultiplier;
+    }
+
+    public String title() {
+        return Messages.get(this, name().toLowerCase());
+    }
+    }

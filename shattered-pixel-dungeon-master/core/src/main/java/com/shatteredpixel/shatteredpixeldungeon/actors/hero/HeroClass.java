@@ -69,6 +69,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRemoveCurs
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfMagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.GlorySeeker;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Cudgel;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Dagger;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Gloves;
@@ -81,6 +82,8 @@ import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingSt
 import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.watabou.utils.DeviceCompat;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.GlorySeeker;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.WeaponQuality;
 
 public enum HeroClass {
 
@@ -172,21 +175,16 @@ public enum HeroClass {
 	}
 
 	private static void initWarrior( Hero hero ) {
-		(hero.belongings.weapon = new WornShortsword()).identify();
-		ThrowingStone stones = new ThrowingStone();
-		stones.identify().collect();
+		com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Katana testWep =
+				new com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Katana();
 
-		Dungeon.quickslot.setSlot(0, stones);
+		testWep.upgrade(30);
+		testWep.identify().collect();
 
-		if (hero.belongings.armor != null){
-			hero.belongings.armor.affixSeal(new BrokenSeal());
-			Catalog.setSeen(BrokenSeal.class); //as it's not added to the inventory
-		}
-
-		new PotionOfHealing().identify();
-		new ScrollOfRage().identify();
+		// Force the new blessing and the quality at the very end
+		testWep.quality = WeaponQuality.MASTERWORK;
+		testWep.applyBlessing( new GlorySeeker() ); // Swapping to Bloodbound!
 	}
-
 	private static void initMage( Hero hero ) {
 		MagesStaff staff;
 

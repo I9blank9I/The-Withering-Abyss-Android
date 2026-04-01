@@ -114,16 +114,28 @@ public class DesktopLauncher {
 				System.exit(1);
 			}
 		});
-		
+
 		Game.version = DesktopLauncher.class.getPackage().getSpecificationVersion();
 		if (Game.version == null) {
 			Game.version = System.getProperty("Specification-Version");
 		}
-		
+
+// THE EMERGENCY FIX:
+		if (Game.version == null || Game.version.isEmpty()) {
+			Game.version = "1.0.0-CUSTOM";
+		}
+// Hardcode the version code so it doesn't crash on null strings
 		try {
-			Game.versionCode = Integer.parseInt(DesktopLauncher.class.getPackage().getImplementationVersion());
-		} catch (NumberFormatException e) {
-			Game.versionCode = Integer.parseInt(System.getProperty("Implementation-Version"));
+			String vCode = DesktopLauncher.class.getPackage().getImplementationVersion();
+			if (vCode == null) vCode = System.getProperty("Implementation-Version");
+
+			if (vCode != null && !vCode.isEmpty()) {
+				Game.versionCode = Integer.parseInt(vCode);
+			} else {
+				Game.versionCode = 1; // Default to 1 if nothing is found
+			}
+		} catch (Exception e) {
+			Game.versionCode = 1; // Safety fallback
 		}
 
 		if (UpdateImpl.supportsUpdates()){
@@ -144,7 +156,13 @@ public class DesktopLauncher {
 		if (vendor == null) {
 			vendor = System.getProperty("Implementation-Title");
 		}
-		vendor = vendor.split("\\.")[1];
+
+// Safety check for vendor string
+		if (vendor == null || !vendor.contains(".")) {
+			vendor = "shatteredpixel.custom";
+		} else {
+			vendor = vendor.split("\\.")[1];
+		}
 
 		String basePath = "";
 		Files.FileType baseFileType = null;

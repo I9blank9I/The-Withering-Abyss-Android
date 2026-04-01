@@ -113,13 +113,25 @@ abstract public class Weapon extends KindOfWeapon {
 			return dly * delayFactor;
 		}
 	}
-	
+
 	public Augment augment = Augment.NONE;
 	public WeaponQuality quality = WeaponQuality.USED;
+	public com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing blessing;
+
+	// The doorway for Quality
+	public void applyQuality( WeaponQuality q ) {
+		this.quality = q;
+	}
+
+	// The doorway for Blessing
+	public void applyBlessing( com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing b ) {
+		this.blessing = b;
+	}
 
 	protected int usesToID(){
-		return 20;
-	}
+        return 0;
+    }
+
 	protected float usesLeftToID = usesToID();
 	protected float availableUsesToID = usesToID()/2f;
 	
@@ -130,6 +142,13 @@ abstract public class Weapon extends KindOfWeapon {
 	
 	@Override
 	public int proc( Char attacker, Char defender, int damage ) {
+
+// --- THE UNIVERSAL TRIGGER ---
+		// This MUST be at the very top so nothing else can stop it!
+		if (this.blessing != null && attacker instanceof Hero) {
+			damage = this.blessing.proc(this, attacker, defender, damage, level());
+		}
+		// -----------------------------
 
 		boolean becameAlly = false;
 		boolean wasAlly = defender.alignment == Char.Alignment.ALLY;
@@ -162,11 +181,10 @@ abstract public class Weapon extends KindOfWeapon {
 				}
 
 			} else {
-				if (enchantment != null) {
-					damage = enchantment.proc(this, attacker, defender, damage);
-					if (defender.alignment == Char.Alignment.ALLY && !wasAlly) {
-						becameAlly = true;
-					}
+				// --- TRIGGER CUSTOM BLESSING ---
+				if (blessing != null) {
+					// Pass in the weapon's level so your Level 10/30/60 checks work!
+					damage = blessing.proc(this, attacker, defender, damage, level());
 				}
 
 				if (defender.isAlive() && !becameAlly && trinityEnchant != null){
@@ -236,6 +254,8 @@ abstract public class Weapon extends KindOfWeapon {
 		bundle.put( CURSE_INFUSION_BONUS, curseInfusionBonus );
 		bundle.put( MASTERY_POTION_BONUS, masteryPotionBonus );
 		bundle.put( AUGMENT, augment );
+		if (quality != null) bundle.put("QUALITY", quality);
+		bundle.put("BLESSING", blessing);
 	}
 	
 	@Override
@@ -247,8 +267,9 @@ abstract public class Weapon extends KindOfWeapon {
 		enchantHardened = bundle.getBoolean( ENCHANT_HARDENED );
 		curseInfusionBonus = bundle.getBoolean( CURSE_INFUSION_BONUS );
 		masteryPotionBonus = bundle.getBoolean( MASTERY_POTION_BONUS );
-
 		augment = bundle.getEnum(AUGMENT, Augment.class);
+		quality = bundle.getEnum("QUALITY", WeaponQuality.class);
+		blessing = (com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing)bundle.get("BLESSING");
 	}
 	
 	@Override
@@ -404,18 +425,26 @@ abstract public class Weapon extends KindOfWeapon {
 
 		return super.upgrade();
 	}
-	
+
 	@Override
 	public String name() {
-		if (isEquipped(Dungeon.hero) && !hasCurseEnchant() && Dungeon.hero.buff(HolyWeapon.HolyWepBuff.class) != null
-			&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || enchantment == null)){
-				return Messages.get(HolyWeapon.class, "ench_name", super.name());
-			} else {
-				return enchantment != null && (cursedKnown || !enchantment.curse()) ? enchantment.name(super.name()) : super.name();
+		// 1. Get the base name of the weapon (e.g., "Katana")
+		String wepName = super.name();
 
+		// 2. If it has a blessing, add the blessing's name to the front (e.g., "Glory Seeker's Katana")
+		if (blessing != null) {
+			wepName = blessing.name() + " " + wepName;
+		}
+
+		// 3. Keep the original game logic for handling Enchantments and Holy Weapons,
+		// but use our new 'wepName' instead of super.name()
+		if (isEquipped(Dungeon.hero) && !hasCurseEnchant() && Dungeon.hero.buff(HolyWeapon.HolyWepBuff.class) != null
+				&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || enchantment == null)){
+			return Messages.get(HolyWeapon.class, "ench_name", wepName);
+		} else {
+			return enchantment != null && (cursedKnown || !enchantment.curse()) ? enchantment.name(wepName) : wepName;
 		}
 	}
-	
 	@Override
 	public Item random() {
 		//+0: 75% (3/4)
@@ -444,6 +473,10 @@ abstract public class Weapon extends KindOfWeapon {
 			quality = WeaponQuality.FLAWLESS;
 		} else {
 			quality = WeaponQuality.MASTERWORK;
+		}
+		// 15% chance for ANY weapon dropping in the dungeon to get a random Blessing!
+		if (Random.Float() < 0.15f) {
+			applyBlessing( com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing.random() );
 		}
 
 		//we use a separate RNG here so that variance due to things like parchment scrap

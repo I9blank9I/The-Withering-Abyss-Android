@@ -1,24 +1,3 @@
-/*
- * Pixel Dungeon
- * Copyright (C) 2012-2015 Oleg Dolya
- *
- * Shattered Pixel Dungeon
- * Copyright (C) 2014-2026 Evan Debenham
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
-
 package com.shatteredpixel.shatteredpixeldungeon.services.updates;
 
 import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
@@ -45,46 +24,27 @@ public class Updates {
 		return supportsUpdates() && service.supportsBetaChannel();
 	}
 
+	// --- MODIFIED: Stripped out the internet check ---
 	public static void checkForUpdate(){
-		if (!supportsUpdatePrompts()) return;
-		if (lastCheck != null && (new Date().getTime() - lastCheck.getTime()) < CHECK_DELAY) return;
-
-		//We do this so that automatically enabled beta checking (for users who DLed a beta) persists afterward
-		if (SPDSettings.betas()){
-			SPDSettings.betas(true);
-		}
-
-		service.checkForUpdate(!SPDSettings.WiFi(), SPDSettings.betas(), new UpdateService.UpdateResultCallback() {
-			@Override
-			public void onUpdateAvailable(AvailableUpdateData update) {
-				lastCheck = new Date();
-				updateData = update;
-			}
-
-			@Override
-			public void onNoUpdateFound() {
-				lastCheck = new Date();
-			}
-
-			@Override
-			public void onConnectionFailed() {
-				lastCheck = null;
-			}
-		});
+		// Instantly forces the game to stop looking for updates
+		lastCheck = null;
+		updateData = null;
 	}
 
 	public static void launchUpdate( AvailableUpdateData data ){
-		service.initializeUpdate( data );
+		// Disabled so the game cannot try to download anything
 	}
 
 	private static AvailableUpdateData updateData = null;
 
+	// --- MODIFIED: Always tell the game there is NO update available ---
 	public static boolean updateAvailable(){
-		return updateData != null;
+		return false;
 	}
 
+	// --- MODIFIED: Always return null ---
 	public static AvailableUpdateData updateData(){
-		return updateData;
+		return null;
 	}
 
 	public static void clearUpdate(){
@@ -93,26 +53,18 @@ public class Updates {
 	}
 
 	public static boolean supportsReviews() {
-		return supportsUpdates() && service.supportsReviews();
+		return false; // Disabled the review prompt so it doesn't link to the official game
 	}
 
 	public static void launchReview(Callback callback){
-		if (supportsUpdates()){
-			service.initializeReview(new UpdateService.ReviewResultCallback() {
-				@Override
-				public void onComplete() {
-					callback.call();
-				}
-			});
-		} else {
+		// Just silently close the review prompt if it somehow opens
+		if (callback != null) {
 			callback.call();
 		}
 	}
 
 	public static void openReviewURI(){
-		if (supportsUpdates()){
-			service.openReviewURI();
-		}
+		// Disabled so your mod doesn't open the official Google Play page
 	}
 
 }
