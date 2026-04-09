@@ -70,9 +70,11 @@ import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.shatteredpixel.shatteredpixeldungeon.items.wands.WandOfMagicMissile;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.SpiritBow;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.GlorySeeker;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Cudgel;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Dagger;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Gloves;
+import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Katana;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MagesStaff;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Rapier;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.WornShortsword;
@@ -175,15 +177,15 @@ public enum HeroClass {
 	}
 
 	private static void initWarrior( Hero hero ) {
-		com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Katana testWep =
-				new com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Katana();
-
+		BrokenSeal seal = new BrokenSeal();
+		Katana testWep = new Katana();
 		testWep.upgrade(30);
-		testWep.identify().collect();
-
-		// Force the new blessing and the quality at the very end
+		testWep.identify();
 		testWep.quality = WeaponQuality.MASTERWORK;
-		testWep.applyBlessing( new GlorySeeker() ); // Swapping to Bloodbound!
+		testWep.applyBlessing(new GlorySeeker());
+		testWep.element = Element.INFERNAL; // Test an element!
+		hero.belongings.weapon = testWep;
+		testWep.updateQuickslot();
 	}
 	private static void initMage( Hero hero ) {
 		MagesStaff staff;

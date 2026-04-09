@@ -111,30 +111,47 @@ public class RenderedTextBlock extends Component {
 
 	private synchronized void build(){
 		if (tokens == null) return;
-		
+
 		clear();
 		words = new ArrayList<>();
 		boolean highlighting = false;
+		int customColor = -1; // Added custom tracker for HEX tags!
+
 		for (String str : tokens){
 
-			//if highlighting is enabled, '_' or '**' is used to toggle highlighting on or off
-			// the actual symbols are not rendered
 			if ((str.equals("_") || str.equals("**")) && highlightingEnabled){
 				highlighting = !highlighting;
+			} else if (str.startsWith("[#") && str.endsWith("]")) {
+				// 1. Catch our custom color tags!
+				try {
+					customColor = (int) Long.parseLong(str.substring(2, str.length() - 1), 16);
+				} catch (Exception e) {
+					customColor = -1;
+				}
+			} else if (str.equals("[]")) {
+				// 2. Reset back to the normal default color!
+				customColor = -1;
 			} else if (str.equals("\n")){
 				words.add(NEWLINE);
 			} else if (str.equals(" ")){
 				words.add(SPACE);
 			} else {
 				RenderedText word = new RenderedText(str, size);
-				
-				if (highlighting) word.hardlight(hightlightColor);
-				else if (color != -1) word.hardlight(color);
+
+				// Apply colors in priority: HEX Tag > Highlight > Base Color
+				if (customColor != -1) {
+					word.hardlight(customColor);
+				} else if (highlighting) {
+					word.hardlight(hightlightColor);
+				} else if (color != -1) {
+					word.hardlight(color);
+				}
+
 				word.scale.set(zoom);
-				
+
 				words.add(word);
 				add(word);
-				
+
 				if (height < word.height()) height = word.height();
 			}
 		}

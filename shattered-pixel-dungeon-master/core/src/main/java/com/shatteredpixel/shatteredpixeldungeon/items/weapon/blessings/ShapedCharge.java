@@ -37,7 +37,7 @@ public class ShapedCharge extends Blessing {
     private void explode(Char attacker, int center, int damage, int weaponLevel) {
         int radius = (weaponLevel >= 30) ? 2 : 1;
         
-        Sample.INSTANCE.play(Assets.Sounds.ROCKS);
+        Sample.INSTANCE.play(Assets.Sounds.BLAST);
 
         for (int i = 0; i < Dungeon.level.length(); i++) {
             if (Dungeon.level.distance(center, i) <= radius) {

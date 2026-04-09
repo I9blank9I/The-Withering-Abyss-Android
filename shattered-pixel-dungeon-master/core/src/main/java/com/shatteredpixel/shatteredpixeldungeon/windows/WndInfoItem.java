@@ -84,9 +84,9 @@ public class WndInfoItem extends Window {
 
 		layoutFields(titlebar, txtInfo);
 	}
-	
+
 	private void fillFields( Item item ) {
-		
+
 		int color = TITLE_COLOR;
 		if (item.levelKnown && item.level() > 0) {
 			color = ItemSlot.UPGRADED;
@@ -96,9 +96,9 @@ public class WndInfoItem extends Window {
 
 		IconTitle titlebar = new IconTitle( item );
 		titlebar.color( color );
-		
+
 		RenderedTextBlock txtInfo = PixelScene.renderTextBlock( item.info(), 6 );
-		
+
 		layoutFields(titlebar, txtInfo);
 	}
 
