@@ -40,10 +40,12 @@ public abstract class Blessing implements Bundlable {
 
 	@Override
 	public void restoreFromBundle(Bundle bundle) {
+		// Base class does nothing, subclasses should override
 	}
 
 	@Override
 	public void storeInBundle(Bundle bundle) {
+		// Base class does nothing, subclasses should override
 	}
 
 	public abstract ItemSprite.Glowing glowing();

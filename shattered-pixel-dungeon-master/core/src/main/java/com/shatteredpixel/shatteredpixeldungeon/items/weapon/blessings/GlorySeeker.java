@@ -16,9 +16,11 @@ import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
+import com.watabou.utils.Bundle;
 
 public class GlorySeeker extends Blessing {
 
+    private static final String KILLS = "kills";
     public int kills = 0;
 
     @Override
@@ -141,5 +143,17 @@ public class GlorySeeker extends Blessing {
     @Override
     public ItemSprite.Glowing glowing() {
         return new ItemSprite.Glowing(0xFFD700);
+    }
+
+    @Override
+    public void storeInBundle(Bundle bundle) {
+        super.storeInBundle(bundle);
+        bundle.put(KILLS, kills);
+    }
+
+    @Override
+    public void restoreFromBundle(Bundle bundle) {
+        super.restoreFromBundle(bundle);
+        kills = bundle.getInt(KILLS);
     }
 }

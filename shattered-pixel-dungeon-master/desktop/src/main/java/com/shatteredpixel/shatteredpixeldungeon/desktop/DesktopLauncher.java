@@ -132,10 +132,10 @@ public class DesktopLauncher {
 			if (vCode != null && !vCode.isEmpty()) {
 				Game.versionCode = Integer.parseInt(vCode);
 			} else {
-				Game.versionCode = 1; // Default to 1 if nothing is found
+				Game.versionCode = 896; // Default to current version so saves work
 			}
 		} catch (Exception e) {
-			Game.versionCode = 1; // Safety fallback
+			Game.versionCode = 896; // Safety fallback - must be >= 802 for saves
 		}
 
 		if (UpdateImpl.supportsUpdates()){

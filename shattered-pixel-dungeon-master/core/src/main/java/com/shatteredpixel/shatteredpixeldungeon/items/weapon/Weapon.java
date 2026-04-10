@@ -305,7 +305,6 @@ abstract public class Weapon extends KindOfWeapon {
 	// SAVE TAGS
 
 	private static final String GLORY_KILLS_TAG = "glory_kills_v5";
-	// SAVE TAGS (Upgraded to v7 to escape the corrupted files!)
 	private static final String QUALITY_TAG  = "quality_v7";
 	private static final String BLESSING_TAG = "blessing_v7";
 	private static final String ELEMENT_TAG = "element_v7";
