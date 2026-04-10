@@ -303,9 +303,12 @@ abstract public class Weapon extends KindOfWeapon {
 	private static final String AUGMENT            = "augment";
 
 	// SAVE TAGS
-	private static final String QUALITY_TAG  = "quality_v3";
-	private static final String BLESSING_TAG = "blessing_v3";
-	private static final String ELEMENT_TAG = "element_v3";
+
+	private static final String GLORY_KILLS_TAG = "glory_kills_v5";
+	// SAVE TAGS (Upgraded to v7 to escape the corrupted files!)
+	private static final String QUALITY_TAG  = "quality_v7";
+	private static final String BLESSING_TAG = "blessing_v7";
+	private static final String ELEMENT_TAG = "element_v7";
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -318,11 +321,13 @@ abstract public class Weapon extends KindOfWeapon {
 		bundle.put( MASTERY_POTION_BONUS, masteryPotionBonus );
 		bundle.put( AUGMENT, augment );
 
-		// SAVE CUSTOM DATA
-		bundle.put( QUALITY_TAG, quality );
-		if (element != null) bundle.put( ELEMENT_TAG, element.name() );
+		// 1. SAVE ENUMS AS STRINGS: This completely prevents the Java Reflection crash!
+		bundle.put( QUALITY_TAG, quality != null ? quality.name() : "USED" );
+		bundle.put( ELEMENT_TAG, element != null ? element.name() : "NONE" );
+
+		// 2. SAVE BLESSING AS BUNDLABLE: The engine safely handles this natively!
 		if (blessing != null) {
-			bundle.put( BLESSING_TAG, blessing.getClass().getName() );
+			bundle.put( BLESSING_TAG, blessing );
 		}
 	}
 
@@ -337,20 +342,28 @@ abstract public class Weapon extends KindOfWeapon {
 		masteryPotionBonus = bundle.getBoolean( MASTERY_POTION_BONUS );
 		augment = bundle.getEnum(AUGMENT, Augment.class);
 
-		// LOAD CUSTOM DATA
-		quality = bundle.getEnum( QUALITY_TAG, WeaponQuality.class );
-		if (quality == null) quality = WeaponQuality.USED;
+		// 1. LOAD ENUMS FROM STRINGS SAFELY
+		try {
+			quality = WeaponQuality.valueOf( bundle.getString(QUALITY_TAG) );
+		} catch (Exception e) {
+			quality = WeaponQuality.USED;
+		}
 
-		if (bundle.contains(ELEMENT_TAG)) element = Element.valueOf(bundle.getString(ELEMENT_TAG));
+		try {
+			element = Element.valueOf( bundle.getString(ELEMENT_TAG) );
+		} catch (Exception e) {
+			element = Element.NONE;
+		}
 
-		String blessingName = bundle.getString( BLESSING_TAG );
-		if (blessingName != null && !blessingName.isEmpty()) {
-			try {
-				blessing = (com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing)
-						Class.forName( blessingName ).newInstance();
-			} catch (Exception e) {
+		// 2. LOAD BLESSING SAFELY
+		try {
+			if (bundle.contains(BLESSING_TAG)) {
+				blessing = (com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing) bundle.get(BLESSING_TAG);
+			} else {
 				blessing = null;
 			}
+		} catch (Exception e) {
+			blessing = null;
 		}
 	}
 

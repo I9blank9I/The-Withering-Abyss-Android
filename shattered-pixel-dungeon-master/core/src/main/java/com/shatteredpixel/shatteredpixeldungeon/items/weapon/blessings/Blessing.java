@@ -12,6 +12,7 @@ import com.watabou.utils.Reflection;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+
 public abstract class Blessing implements Bundlable {
 
 	public static final Class<?>[] blessings = new Class<?>[]{
