@@ -566,19 +566,20 @@ public class WndJournal extends WndTabbed {
 	}
 	
 	public static class CatalogTab extends Component{
-		
+
 		private RedButton[] itemButtons;
-		private static final int NUM_BUTTONS = 4;
+		private static final int NUM_BUTTONS = 6;
 
 		public static int currentItemIdx   = 0;
 		private static float[] scrollPositions = new float[NUM_BUTTONS];
-		
+
 		//sprite locations
 		private static final int EQUIP_IDX = 0;
 		private static final int CONSUM_IDX = 1;
 		private static final int BESTIARY_IDX = 2;
 		private static final int LORE_IDX = 3;
-
+		private static final int ELEMENTS_IDX = 4;
+		private static final int BLESSINGS_IDX = 5;
 		private ScrollingGridPane grid;
 		
 		@Override
@@ -599,6 +600,8 @@ public class WndJournal extends WndTabbed {
 			itemButtons[CONSUM_IDX].icon(new ItemSprite(ItemSpriteSheet.POTION_HOLDER));
 			itemButtons[BESTIARY_IDX].icon(new ItemSprite(ItemSpriteSheet.MOB_HOLDER));
 			itemButtons[LORE_IDX].icon(new ItemSprite(ItemSpriteSheet.DOCUMENT_HOLDER));
+			itemButtons[ELEMENTS_IDX].icon(new ItemSprite(ItemSpriteSheet.SEED_HOLDER));
+			itemButtons[BLESSINGS_IDX].icon(new ItemSprite(ItemSpriteSheet.WAND_HOLDER));
 
 			grid = new ScrollingGridPane(){
 				@Override
@@ -609,25 +612,26 @@ public class WndJournal extends WndTabbed {
 			};
 			add( grid );
 		}
-		
+
 		@Override
 		protected void layout() {
 			super.layout();
-			
-			int perRow = NUM_BUTTONS;
-			float buttonWidth = width()/perRow;
-			
+
+			// CHANGE: 3 buttons per row instead of 6 so they don't squish!
+			int perRow = 3;
+			float buttonWidth = width() / perRow;
+
 			for (int i = 0; i < NUM_BUTTONS; i++) {
-				itemButtons[i].setRect(x +(i%perRow) * (buttonWidth),
-						y + (i/perRow) * (ITEM_HEIGHT ),
+				itemButtons[i].setRect(x + (i % perRow) * buttonWidth,
+						y + (i / perRow) * ITEM_HEIGHT,
 						buttonWidth, ITEM_HEIGHT);
 				PixelScene.align(itemButtons[i]);
 			}
-			
+
 			grid.setRect(x,
 					itemButtons[NUM_BUTTONS-1].bottom() + 1,
 					width,
-					height - itemButtons[NUM_BUTTONS-1].height() - 1);
+					height - (itemButtons[0].height() * 2) - 1); // Adjust height for 2 rows
 		}
 		
 		public void updateList() {
@@ -686,7 +690,9 @@ public class WndJournal extends WndTabbed {
 					addGridEntities(grid, bestiary.entities());
 				}
 
-			} else {
+				
+
+			} else if (currentItemIdx == LORE_IDX){
 				int totalItems = 0;
 				int totalSeen = 0;
 				for (Document doc : Document.values()){
@@ -706,18 +712,6 @@ public class WndJournal extends WndTabbed {
 					if (!doc.isLoreDoc()){
 						continue;
 					}
-
-					for (String page : doc.pageNames()){
-						totalItems++;
-						if (doc.isPageFound(page)){
-							totalSeen++;
-						}
-					}
-				}
-				for (Document doc : Document.values()){
-					if (!doc.isLoreDoc()){
-						continue;
-					}
 					totalItems = totalSeen = 0;
 					for (String page : doc.pageNames()){
 						totalItems++;
@@ -732,6 +726,14 @@ public class WndJournal extends WndTabbed {
 					}
 					addGridDocuments(grid, doc);
 				}
+
+			} else if (currentItemIdx == ELEMENTS_IDX){
+				grid.addHeader("_" + Messages.get(this, "title_elements") + "_", 9, true);
+				addGridElements(grid);
+
+			} else if (currentItemIdx == BLESSINGS_IDX){
+				grid.addHeader("_" + Messages.get(this, "title_blessings") + "_", 9, true);
+				addGridBlessings(grid);
 			}
 
 			grid.setRect(x, itemButtons[NUM_BUTTONS-1].bottom() + 1, width,
@@ -1064,6 +1066,125 @@ public class WndJournal extends WndTabbed {
 			} else {
 				gridItem.hardLightBG(2.2f, 1f, 2.2f);
 			}
+			grid.addItem(gridItem);
+		}
+	}
+
+	// Displays all elemental types with descriptions
+	private static void addGridElements(ScrollingGridPane grid) {
+		for (com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element elem :
+				com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element.values()) {
+
+			if (elem == com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element.NONE) {
+				continue;
+			}
+
+			String elemName = elem.name().substring(0, 1).toUpperCase() + elem.name().substring(1).toLowerCase();
+			String desc = "";
+			int color = 0xFFFFFF;
+
+			switch (elem) {
+				case ABYSSAL:
+					desc = "Draws power from the void, occasionally blinding enemies.";
+					color = 0x553377;
+					break;
+				case LUMINOUS:
+					desc = "Burns bright, dealing devastating damage to undead and demonic foes.";
+					color = 0xFFFFFF;
+					break;
+				case SANGUINE:
+					desc = "Deals more damage as you lose health, and occasionally heals you.";
+					color = 0x8B0000;
+					break;
+				case CHAOTIC:
+					desc = "Inflicts random debilitating debuffs on your target.";
+					color = 0xFF00FF;
+					break;
+				case INFERNAL:
+					desc = "Has a high chance to set enemies ablaze.";
+					color = 0xFF4500;
+					break;
+				case GLACIAL:
+					desc = "Freezes and chills enemies, stopping them in their tracks.";
+					color = 0x00BFFF;
+					break;
+				case GILDED:
+					desc = "Gains bonus damage based on the amount of gold you carry.";
+					color = 0xFFD700;
+					break;
+				case VOLTAIC:
+					desc = "Fires arcs of lightning to strike nearby enemies.";
+					color = 0x00FFFF;
+					break;
+				case CAUSTIC:
+					desc = "Coats the enemy in highly corrosive acid.";
+					color = 0x32CD32;
+					break;
+				case ZEPHYR:
+					desc = "Increases your physical attack reach by 1 tile.";
+					color = 0xF0F8FF;
+					break;
+				case TERRAN:
+					desc = "Occasionally blasts enemies backwards with a shockwave.";
+					color = 0x8B4513;
+					break;
+			}
+
+			final String finalDesc = desc;
+			final int finalColor = color;
+			ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(
+					new ItemSprite(ItemSpriteSheet.SEED_HOLDER, new ItemSprite.Glowing(finalColor))) {
+				@Override
+				public boolean onClick(float x, float y) {
+					if (inside(x, y)) {
+						Image sprite = new ItemSprite(ItemSpriteSheet.SEED_HOLDER, new ItemSprite.Glowing(finalColor));
+						if (ShatteredPixelDungeon.scene() instanceof GameScene){
+							GameScene.show(new WndJournalItem(sprite, elemName, finalDesc));
+						} else {
+							ShatteredPixelDungeon.scene().addToFront(new WndJournalItem(sprite, elemName, finalDesc));
+						}
+						return true;
+					} else {
+						return false;
+					}
+				}
+			};
+			grid.addItem(gridItem);
+		}
+	}
+
+	// Displays all blessing types with detailed descriptions
+	private static void addGridBlessings(ScrollingGridPane grid) {
+		for (Class<?> blessingClass :
+				com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing.blessings) {
+
+			com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing b =
+					(com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing)
+							com.watabou.utils.Reflection.newInstance(blessingClass);
+
+			String bName = b.name();
+			String bDesc = b.desc();
+
+			final String finalName = bName;
+			final String finalDesc = bDesc;
+			final com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing finalBlessing = b;
+			ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(
+					new ItemSprite(ItemSpriteSheet.WAND_HOLDER, b.glowing())) {
+				@Override
+				public boolean onClick(float x, float y) {
+					if (inside(x, y)) {
+						Image sprite = new ItemSprite(ItemSpriteSheet.WAND_HOLDER, finalBlessing.glowing());
+						if (ShatteredPixelDungeon.scene() instanceof GameScene){
+							GameScene.show(new WndJournalItem(sprite, finalName, finalDesc));
+						} else {
+							ShatteredPixelDungeon.scene().addToFront(new WndJournalItem(sprite, finalName, finalDesc));
+						}
+						return true;
+					} else {
+						return false;
+					}
+				}
+			};
 			grid.addItem(gridItem);
 		}
 	}
