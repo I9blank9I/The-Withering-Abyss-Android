@@ -380,6 +380,13 @@ abstract public class Weapon extends KindOfWeapon {
 				Catalog.setSeen(enchantment.getClass());
 				Statistics.itemTypesDiscovered.add(enchantment.getClass());
 			}
+			if (Dungeon.hero != null && Dungeon.hero.isAlive() && isIdentified() && blessing != null){
+				Catalog.setSeen(blessing.getClass());
+				Statistics.itemTypesDiscovered.add(blessing.getClass());
+			}
+			if (Dungeon.hero != null && Dungeon.hero.isAlive() && isIdentified() && element != null && element != Element.NONE){
+				element.setSeen();
+			}
 			return true;
 		} else {
 			return false;
@@ -574,48 +581,57 @@ abstract public class Weapon extends KindOfWeapon {
 		// 2. EXPLICIT ELEMENT DESCRIPTIONS
 		String elementDesc = "";
 		if (element != null && element != Element.NONE) {
-			// Capitalize the first letter of the Element nicely
 			String elemName = element.name().substring(0, 1).toUpperCase() + element.name().substring(1).toLowerCase();
-			elementDesc = "\n\nElement: " + elemName + "\n";
-
-			switch (element) {
-				case ABYSSAL: elementDesc += "Draws power from the void, occasionally blinding enemies."; break;
-				case LUMINOUS: elementDesc += "Burns bright, dealing devastating damage to undead and demonic foes."; break;
-				case SANGUINE: elementDesc += "Deals more damage as you lose health, and occasionally heals you."; break;
-				case CHAOTIC: elementDesc += "Inflicts random debilitating debuffs on your target."; break;
-				case INFERNAL: elementDesc += "Has a high chance to set enemies ablaze."; break;
-				case GLACIAL: elementDesc += "Freezes and chills enemies, stopping them in their tracks."; break;
-				case GILDED: elementDesc += "Gains bonus damage based on the amount of gold you carry."; break;
-				case VOLTAIC: elementDesc += "Fires arcs of lightning to strike nearby enemies."; break;
-				case CAUSTIC: elementDesc += "Coats the enemy in highly corrosive acid."; break;
-				case ZEPHYR: elementDesc += "Increases your physical attack reach by 1 tile."; break;
-				case TERRAN: elementDesc += "Occasionally blasts enemies backwards with a shockwave."; break;
+			
+			if (element.isSeen()) {
+				elementDesc = "\n\nElement: " + elemName + "\n";
+				switch (element) {
+					case ABYSSAL: elementDesc += "Draws power from the void, occasionally blinding enemies."; break;
+					case LUMINOUS: elementDesc += "Burns bright, dealing devastating damage to undead and demonic foes."; break;
+					case SANGUINE: elementDesc += "Deals more damage as you lose health, and occasionally heals you."; break;
+					case CHAOTIC: elementDesc += "Inflicts random debilitating debuffs on your target."; break;
+					case INFERNAL: elementDesc += "Has a high chance to set enemies ablaze."; break;
+					case GLACIAL: elementDesc += "Freezes and chills enemies, stopping them in their tracks."; break;
+					case GILDED: elementDesc += "Gains bonus damage based on the amount of gold you carry."; break;
+					case VOLTAIC: elementDesc += "Fires arcs of lightning to strike nearby enemies."; break;
+					case CAUSTIC: elementDesc += "Coats the enemy in highly corrosive acid."; break;
+					case ZEPHYR: elementDesc += "Increases your physical attack reach by 1 tile."; break;
+					case TERRAN: elementDesc += "Occasionally blasts enemies backwards with a shockwave."; break;
+				}
+			} else {
+				elementDesc = "\n\nElement: ???\n";
+				elementDesc += "A mysterious element.\n\nIdentify a weapon imbued with this element to learn more about it.";
 			}
 		}
 
 		// 3. EXPLICIT BLESSING DESCRIPTIONS
 		String blessingDesc = "";
 		if (blessing != null) {
-			blessingDesc = "\n\nBlessing: [#FFD700]" + blessing.name() + "[]\n";
+			if (Catalog.isSeen(blessing.getClass())) {
+				blessingDesc = "\n\nBlessing: [#FFD700]" + blessing.name() + "[]\n";
 
-			if (blessing.name().equals("GlorySeeker")) {
-				blessingDesc += "A sentient blade that feeds on souls to level up, fires golden lasers, and cheers you on!";
-			} else if (blessing.name().equals("Phasing")) {
-				blessingDesc += "Grants permanent vision through walls and allows attacks to pass through solid matter.";
-			} else if (blessing.name().equals("Guided")) {
-				blessingDesc += "Never misses an attack and occasionally strikes weakpoints for massive critical damage.";
-			} else if (blessing.name().equals("Bloodbound")) {
-				blessingDesc += "Ties its power to your life force, growing stronger as you spill blood.";
-			} else if (blessing.name().equals("Captivating")) {
-				blessingDesc += "Charms enemies on strike, bending them to your will.";
-			} else if (blessing.name().equals("Harmonized")) {
-				blessingDesc += "A perfectly balanced blade that resonates with your movements.";
-			} else if (blessing.name().equals("Radiant")) {
-				blessingDesc += "Emits a brilliant aura that purges darkness and sears enemies.";
-			} else if (blessing.name().equals("ShapedCharge")) {
-				blessingDesc += "Unleashes devastating explosive damage on impact.";
+				if (blessing.name().equals("GlorySeeker")) {
+					blessingDesc += "A sentient blade that feeds on souls to level up, fires golden lasers, and cheers you on!";
+				} else if (blessing.name().equals("Phasing")) {
+					blessingDesc += "Grants permanent vision through walls and allows attacks to pass through solid matter.";
+				} else if (blessing.name().equals("Guided")) {
+					blessingDesc += "Never misses an attack and occasionally strikes weakpoints for massive critical damage.";
+				} else if (blessing.name().equals("Bloodbound")) {
+					blessingDesc += "Ties its power to your life force, growing stronger as you spill blood.";
+				} else if (blessing.name().equals("Captivating")) {
+					blessingDesc += "Charms enemies on strike, bending them to your will.";
+				} else if (blessing.name().equals("Harmonized")) {
+					blessingDesc += "A perfectly balanced blade that resonates with your movements.";
+				} else if (blessing.name().equals("Radiant")) {
+					blessingDesc += "Emits a brilliant aura that purges darkness and sears enemies.";
+				} else if (blessing.name().equals("ShapedCharge")) {
+					blessingDesc += "Unleashes devastating explosive damage on impact.";
+				} else {
+					blessingDesc += "An ancient, powerful blessing.";
+				}
 			} else {
-				blessingDesc += "An ancient, powerful blessing.";
+				blessingDesc = "\n\nBlessing: ???\n";
+				blessingDesc += "A mysterious blessing.\n\nIdentify a weapon imbued with this blessing to learn more about it.";
 			}
 		}
 

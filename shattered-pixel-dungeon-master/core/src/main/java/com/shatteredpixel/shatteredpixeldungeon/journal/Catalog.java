@@ -130,6 +130,7 @@ public enum Catalog {
 	ARMOR,
 	ENCHANTMENTS,
 	GLYPHS,
+	BLESSINGS,
 	THROWN_WEAPONS,
 	WANDS,
 	RINGS,
@@ -210,6 +211,8 @@ public enum Catalog {
 		GLYPHS.addItems(Armor.Glyph.rare);
 		GLYPHS.addItems(Armor.Glyph.curses);
 
+		BLESSINGS.addItems(com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing.blessings);
+
 		WANDS.addItems(Generator.Category.WAND.classes);
 
 		RINGS.addItems(Generator.Category.RING.classes);
@@ -281,6 +284,7 @@ public enum Catalog {
 		equipmentCatalogs.add(ARMOR);
 		equipmentCatalogs.add(ENCHANTMENTS);
 		equipmentCatalogs.add(GLYPHS);
+		equipmentCatalogs.add(BLESSINGS);
 		equipmentCatalogs.add(THROWN_WEAPONS);
 		equipmentCatalogs.add(WANDS);
 		equipmentCatalogs.add(RINGS);

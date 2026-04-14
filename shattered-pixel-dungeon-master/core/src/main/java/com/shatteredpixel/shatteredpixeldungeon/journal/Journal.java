@@ -49,12 +49,13 @@ public class Journal {
 		Catalog.restore( bundle );
 		Bestiary.restore( bundle );
 		Document.restore( bundle );
+		com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element.restore( bundle );
 		
 		loaded = true;
 	}
 	
 	//package-private
-	static boolean saveNeeded = false;
+	public static boolean saveNeeded = false;
 
 	public static void saveGlobal(){
 		saveGlobal(false);
@@ -70,6 +71,7 @@ public class Journal {
 		Catalog.store(bundle);
 		Bestiary.store(bundle);
 		Document.store(bundle);
+		com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element.store( bundle );
 		
 		try {
 			FileUtils.bundleToFile( JOURNAL_FILE, bundle );

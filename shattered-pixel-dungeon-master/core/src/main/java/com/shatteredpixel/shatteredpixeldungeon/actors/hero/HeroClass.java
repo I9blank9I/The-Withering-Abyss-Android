@@ -177,15 +177,19 @@ public enum HeroClass {
 	}
 
 	private static void initWarrior( Hero hero ) {
-		BrokenSeal seal = new BrokenSeal();
-		Katana testWep = new Katana();
-		testWep.upgrade(30);
-		testWep.identify();
-		testWep.quality = WeaponQuality.MASTERWORK;
-		testWep.applyBlessing(new GlorySeeker());
-		testWep.element = Element.INFERNAL; // Test an element!
-		hero.belongings.weapon = testWep;
-		testWep.updateQuickslot();
+		(hero.belongings.weapon = new WornShortsword()).identify();
+		ThrowingStone stones = new ThrowingStone();
+		stones.identify().collect();
+
+		Dungeon.quickslot.setSlot(0, stones);
+
+		if (hero.belongings.armor != null){
+			hero.belongings.armor.affixSeal(new BrokenSeal());
+			Catalog.setSeen(BrokenSeal.class); //as it's not added to the inventory
+		}
+
+		new PotionOfHealing().identify();
+		new ScrollOfRage().identify();
 	}
 	private static void initMage( Hero hero ) {
 		MagesStaff staff;

@@ -728,11 +728,11 @@ public class WndJournal extends WndTabbed {
 				}
 
 			} else if (currentItemIdx == ELEMENTS_IDX){
-				grid.addHeader("_" + Messages.get(this, "title_elements") + "_", 9, true);
+				grid.addHeader("_" + Messages.get(Catalog.class, "title_elements") + "_", 9, true);
 				addGridElements(grid);
 
 			} else if (currentItemIdx == BLESSINGS_IDX){
-				grid.addHeader("_" + Messages.get(this, "title_blessings") + "_", 9, true);
+				grid.addHeader("_" + Messages.get(Catalog.class, "title_blessings") + "_", 9, true);
 				addGridBlessings(grid);
 			}
 
@@ -1079,7 +1079,9 @@ public class WndJournal extends WndTabbed {
 				continue;
 			}
 
-			String elemName = elem.name().substring(0, 1).toUpperCase() + elem.name().substring(1).toLowerCase();
+			boolean seen = elem.isSeen();
+
+			String elemName = seen ? elem.name().substring(0, 1).toUpperCase() + elem.name().substring(1).toLowerCase() : "???";
 			String desc = "";
 			int color = 0xFFFFFF;
 
@@ -1130,14 +1132,21 @@ public class WndJournal extends WndTabbed {
 					break;
 			}
 
+			if (!seen) {
+				desc = "A mysterious element.\n\nIdentify a weapon imbued with this element to learn more about it.";
+			}
+
 			final String finalDesc = desc;
 			final int finalColor = color;
-			ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(
-					new ItemSprite(ItemSpriteSheet.SEED_HOLDER, new ItemSprite.Glowing(finalColor))) {
+			ItemSprite spriteIcon = new ItemSprite(ItemSpriteSheet.SEED_HOLDER, seen ? new ItemSprite.Glowing(finalColor) : null);
+			if (!seen) spriteIcon.lightness(0f);
+
+			ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(spriteIcon) {
 				@Override
 				public boolean onClick(float x, float y) {
 					if (inside(x, y)) {
-						Image sprite = new ItemSprite(ItemSpriteSheet.SEED_HOLDER, new ItemSprite.Glowing(finalColor));
+						Image sprite = new ItemSprite(ItemSpriteSheet.SEED_HOLDER, seen ? new ItemSprite.Glowing(finalColor) : null);
+						if (!seen) sprite.lightness(0f);
 						if (ShatteredPixelDungeon.scene() instanceof GameScene){
 							GameScene.show(new WndJournalItem(sprite, elemName, finalDesc));
 						} else {
@@ -1149,6 +1158,9 @@ public class WndJournal extends WndTabbed {
 					}
 				}
 			};
+			if (!seen) {
+				gridItem.hardLightBG(2f, 1f, 2f);
+			}
 			grid.addItem(gridItem);
 		}
 	}
@@ -1162,18 +1174,24 @@ public class WndJournal extends WndTabbed {
 					(com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing)
 							com.watabou.utils.Reflection.newInstance(blessingClass);
 
-			String bName = b.name();
-			String bDesc = b.desc();
+			boolean seen = Catalog.isSeen(blessingClass);
+
+			String bName = seen ? b.name() : "???";
+			String bDesc = seen ? b.desc() : "A mysterious blessing.\n\nIdentify a weapon imbued with this blessing to learn more about it.";
 
 			final String finalName = bName;
 			final String finalDesc = bDesc;
 			final com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing finalBlessing = b;
-			ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(
-					new ItemSprite(ItemSpriteSheet.WAND_HOLDER, b.glowing())) {
+
+			ItemSprite spriteIcon = new ItemSprite(ItemSpriteSheet.WAND_HOLDER, seen ? b.glowing() : null);
+			if (!seen) spriteIcon.lightness(0f);
+
+			ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(spriteIcon) {
 				@Override
 				public boolean onClick(float x, float y) {
 					if (inside(x, y)) {
-						Image sprite = new ItemSprite(ItemSpriteSheet.WAND_HOLDER, finalBlessing.glowing());
+						Image sprite = new ItemSprite(ItemSpriteSheet.WAND_HOLDER, seen ? finalBlessing.glowing() : null);
+						if (!seen) sprite.lightness(0f);
 						if (ShatteredPixelDungeon.scene() instanceof GameScene){
 							GameScene.show(new WndJournalItem(sprite, finalName, finalDesc));
 						} else {
@@ -1185,6 +1203,9 @@ public class WndJournal extends WndTabbed {
 					}
 				}
 			};
+			if (!seen) {
+				gridItem.hardLightBG(2f, 1f, 2f);
+			}
 			grid.addItem(gridItem);
 		}
 	}
