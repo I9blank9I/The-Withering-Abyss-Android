@@ -813,67 +813,93 @@ public class WndJournal extends WndTabbed {
 					}
 				}
 
-			} else if (Weapon.Enchantment.class.isAssignableFrom(itemClass)){
+} else if (Weapon.Enchantment.class.isAssignableFrom(itemClass)){
 
-				Weapon.Enchantment ench = (Weapon.Enchantment) Reflection.newInstance(itemClass);
+                Weapon.Enchantment ench = (Weapon.Enchantment) Reflection.newInstance(itemClass);
 
-				if (seen){
-					sprite = new ItemSprite(ItemSpriteSheet.WORN_SHORTSWORD, ench.glowing());
-					title = Messages.titleCase(ench.name());
-					desc = ench.desc();
-				} else {
-					sprite = new ItemSprite(ItemSpriteSheet.WORN_SHORTSWORD);
-					sprite.lightness(0f);
-					title = "???";
-					desc = Messages.get(CatalogTab.class, "not_seen_enchantment");
-					desc += "\n\n" + Messages.get(ench, "discover_hint");
-				}
+                if (seen){
+                    sprite = new ItemSprite(ItemSpriteSheet.WORN_SHORTSWORD, ench.glowing());
+                    title = Messages.titleCase(ench.name());
+                    desc = ench.desc();
+                } else {
+                    sprite = new ItemSprite(ItemSpriteSheet.WORN_SHORTSWORD);
+                    sprite.lightness(0f);
+                    title = "???";
+                    desc = Messages.get(CatalogTab.class, "not_seen_enchantment");
+                    desc += "\n\n" + Messages.get(ench, "discover_hint");
+                }
 
-			} else if (Armor.Glyph.class.isAssignableFrom(itemClass)){
+            } else if (Armor.Glyph.class.isAssignableFrom(itemClass)){
 
-				Armor.Glyph glyph = (Armor.Glyph) Reflection.newInstance(itemClass);
+                Armor.Glyph glyph = (Armor.Glyph) Reflection.newInstance(itemClass);
 
-				if (seen){
-					sprite = new ItemSprite(ItemSpriteSheet.ARMOR_CLOTH, glyph.glowing());
-					title = Messages.titleCase(glyph.name());
-					desc = glyph.desc();
-				} else {
-					sprite = new ItemSprite(ItemSpriteSheet.ARMOR_CLOTH);
-					sprite.lightness(0f);
-					title = "???";
-					desc = Messages.get(CatalogTab.class, "not_seen_glyph");
-					desc += "\n\n" + Messages.get(glyph, "discover_hint");
-				}
+                if (seen){
+                    sprite = new ItemSprite(ItemSpriteSheet.ARMOR_CLOTH, glyph.glowing());
+                    title = Messages.titleCase(glyph.name());
+                    desc = glyph.desc();
+                } else {
+                    sprite = new ItemSprite(ItemSpriteSheet.ARMOR_CLOTH);
+                    sprite.lightness(0f);
+                    title = "???";
+                    desc = Messages.get(CatalogTab.class, "not_seen_glyph");
+                    desc += "\n\n" + Messages.get(glyph, "discover_hint");
+                } 
+                
+            // --- BLESSINGS SECTION ---
+            } else if (com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing.class.isAssignableFrom(itemClass)) {
 
-			}
+                com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing blessing =
+                        (com.shatteredpixel.shatteredpixeldungeon.items.weapon.blessings.Blessing) Reflection.newInstance(itemClass);
 
-			String finalTitle = title;
-			String finalDesc = desc;
-			ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(sprite) {
-				@Override
-				public boolean onClick(float x, float y) {
-					if (inside(x, y)) {
-						Image sprite = new ItemSprite();
-						sprite.copy(icon);
-						if (ShatteredPixelDungeon.scene() instanceof GameScene){
-							GameScene.show(new WndJournalItem(sprite, finalTitle, finalDesc));
-						} else {
-							ShatteredPixelDungeon.scene().addToFront(new WndJournalItem(sprite, finalTitle, finalDesc));
-						}
-						return true;
-					} else {
-						return false;
-					}
-				}
-			};
-			if (secondIcon != null){
-				gridItem.addSecondIcon(secondIcon);
-			}
-			if (!seen) {
-				gridItem.hardLightBG(2f, 1f, 2f);
-			}
-			grid.addItem(gridItem);
-		}
+                if (seen){
+                    sprite = new ItemSprite(ItemSpriteSheet.WORN_SHORTSWORD, blessing.glowing());
+                    title = Messages.titleCase(blessing.name());
+                    desc = blessing.desc();
+                } else {
+                    sprite = new ItemSprite(ItemSpriteSheet.WORN_SHORTSWORD);
+                    sprite.lightness(0f);
+                    title = "???";
+                    desc = Messages.get(CatalogTab.class, "not_seen_blessing");
+                    desc += "\n\n" + Messages.get(blessing, "discover_hint");
+                }
+            }
+
+            // --- NEW SAFETY SHIELD ---
+            // If the game doesn't recognize your custom class, give it a placeholder instead of crashing!
+            if (sprite == null) {
+                sprite = new ItemSprite(ItemSpriteSheet.SOMETHING);
+                if (title == null || title.isEmpty()) title = "Custom Mod Item";
+                if (desc == null || desc.isEmpty()) desc = "A powerful custom addition to the game.";
+            }
+            // --- END SAFETY SHIELD ---
+            
+            String finalTitle = title;
+            String finalDesc = desc;
+            ScrollingGridPane.GridItem gridItem = new ScrollingGridPane.GridItem(sprite) {
+                @Override
+                public boolean onClick(float x, float y) {
+                    if (inside(x, y)) {
+                        Image sprite = new ItemSprite();
+                        sprite.copy(icon);
+                        if (ShatteredPixelDungeon.scene() instanceof GameScene){
+                            GameScene.show(new WndJournalItem(sprite, finalTitle, finalDesc));
+                        } else {
+                            ShatteredPixelDungeon.scene().addToFront(new WndJournalItem(sprite, finalTitle, finalDesc));
+                        }
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            };
+            if (secondIcon != null){
+                gridItem.addSecondIcon(secondIcon);
+            }
+            if (!seen) {
+                gridItem.hardLightBG(2f, 1f, 2f);
+            }
+            grid.addItem(gridItem);
+        }
 	}
 
 	private static void addGridEntities(ScrollingGridPane grid, Collection<Class<?>> classes) {
@@ -1081,60 +1107,9 @@ public class WndJournal extends WndTabbed {
 
 			boolean seen = elem.isSeen();
 
-			String elemName = seen ? elem.name().substring(0, 1).toUpperCase() + elem.name().substring(1).toLowerCase() : "???";
-			String desc = "";
-			int color = 0xFFFFFF;
-
-			switch (elem) {
-				case ABYSSAL:
-					desc = "Draws power from the void, occasionally blinding enemies.";
-					color = 0x553377;
-					break;
-				case LUMINOUS:
-					desc = "Burns bright, dealing devastating damage to undead and demonic foes.";
-					color = 0xFFFFFF;
-					break;
-				case SANGUINE:
-					desc = "Deals more damage as you lose health, and occasionally heals you.";
-					color = 0x8B0000;
-					break;
-				case CHAOTIC:
-					desc = "Inflicts random debilitating debuffs on your target.";
-					color = 0xFF00FF;
-					break;
-				case INFERNAL:
-					desc = "Has a high chance to set enemies ablaze.";
-					color = 0xFF4500;
-					break;
-				case GLACIAL:
-					desc = "Freezes and chills enemies, stopping them in their tracks.";
-					color = 0x00BFFF;
-					break;
-				case GILDED:
-					desc = "Gains bonus damage based on the amount of gold you carry.";
-					color = 0xFFD700;
-					break;
-				case VOLTAIC:
-					desc = "Fires arcs of lightning to strike nearby enemies.";
-					color = 0x00FFFF;
-					break;
-				case CAUSTIC:
-					desc = "Coats the enemy in highly corrosive acid.";
-					color = 0x32CD32;
-					break;
-				case ZEPHYR:
-					desc = "Increases your physical attack reach by 1 tile.";
-					color = 0xF0F8FF;
-					break;
-				case TERRAN:
-					desc = "Occasionally blasts enemies backwards with a shockwave.";
-					color = 0x8B4513;
-					break;
-			}
-
-			if (!seen) {
-				desc = "A mysterious element.\n\nIdentify a weapon imbued with this element to learn more about it.";
-			}
+			String elemName = seen ? elem.displayName() : "???";
+			String desc = seen ? elem.desc() : "A mysterious element.\n\nIdentify a weapon imbued with this element to learn more about it.";
+			int color = getElementColor(elem);
 
 			final String finalDesc = desc;
 			final int finalColor = color;
@@ -1162,6 +1137,23 @@ public class WndJournal extends WndTabbed {
 				gridItem.hardLightBG(2f, 1f, 2f);
 			}
 			grid.addItem(gridItem);
+		}
+	}
+
+	private static int getElementColor(com.shatteredpixel.shatteredpixeldungeon.items.weapon.elements.Element elem) {
+		switch (elem) {
+			case ABYSSAL:  return 0x553377;
+			case LUMINOUS: return 0xFFFFFF;
+			case SANGUINE: return 0x8B0000;
+			case CHAOTIC:  return 0xFF00FF;
+			case INFERNAL: return 0xFF4500;
+			case GLACIAL:  return 0x00BFFF;
+			case GILDED:   return 0xFFD700;
+			case VOLTAIC:  return 0x00FFFF;
+			case CAUSTIC:  return 0x32CD32;
+			case ZEPHYR:   return 0xF0F8FF;
+			case TERRAN:   return 0x8B4513;
+			default:       return 0xFFFFFF;
 		}
 	}
 

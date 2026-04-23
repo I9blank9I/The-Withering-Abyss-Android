@@ -23,16 +23,25 @@ public abstract class Blessing implements Bundlable {
 	public abstract int proc(Weapon weapon, Char attacker, Char defender, int damage, int weaponLevel);
 
 	public String name() {
-		String dictName = Messages.get(this, "name");
-		if (dictName.contains("NO TEXT")) {
-			return this.getClass().getSimpleName();
-		}
-		return dictName;
-	}
+        String key = "journal.catalog.blessings." + this.getClass().getSimpleName() + ".name";
+        String dictName = Messages.get(key);
+        if (dictName.contains(Messages.NO_TEXT_FOUND)) {
+            dictName = Messages.get(this, "name");
+            if (dictName.contains(Messages.NO_TEXT_FOUND)) {
+                return this.getClass().getSimpleName();
+            }
+        }
+        return dictName;
+    }
 
-	public String desc() {
-		return Messages.get(this, "desc");
-	}
+    public String desc() {
+        String key = "journal.catalog.blessings." + this.getClass().getSimpleName() + ".desc";
+        String description = Messages.get(key);
+        if (description.contains(Messages.NO_TEXT_FOUND)) {
+            return Messages.get(this, "desc");
+        }
+        return description;
+    }
 
 	public boolean curse() {
 		return false;

@@ -395,9 +395,16 @@ abstract public class Weapon extends KindOfWeapon {
 
 	@Override
 	public Item identify(boolean byHero) {
-		if (enchantment != null && byHero && Dungeon.hero != null && Dungeon.hero.isAlive()){
+		if (enchantment != null && Dungeon.hero != null && Dungeon.hero.isAlive()){
 			Catalog.setSeen(enchantment.getClass());
 			Statistics.itemTypesDiscovered.add(enchantment.getClass());
+		}
+		if (blessing != null && Dungeon.hero != null && Dungeon.hero.isAlive()){
+			Catalog.setSeen(blessing.getClass());
+			Statistics.itemTypesDiscovered.add(blessing.getClass());
+		}
+		if (element != null && element != Element.NONE && Dungeon.hero != null && Dungeon.hero.isAlive()){
+			element.setSeen();
 		}
 		return super.identify(byHero);
 	}
@@ -565,77 +572,44 @@ abstract public class Weapon extends KindOfWeapon {
 		// 1. EXPLICIT QUALITY GRADES
 		String qualityDesc = "";
 		if (quality == WeaponQuality.BROKEN) {
-			qualityDesc = "\n\nQuality: [#888888]Broken[]\nThis weapon is severely broken and barely usable.";
+			qualityDesc = "\n\nQuality: [#888888]" + quality.title() + "[]\nThis weapon is severely broken and barely usable.";
 		} else if (quality == WeaponQuality.RUSTY) {
-			qualityDesc = "\n\nQuality: [#A52A2A]Rusty[]\nThis weapon is rusty and dulled with age.";
+			qualityDesc = "\n\nQuality: [#A52A2A]" + quality.title() + "[]\nThis weapon is rusty and dulled with age.";
 		} else if (quality == WeaponQuality.USED) {
-			qualityDesc = "\n\nQuality: [#FFFFFF]Used[]\nThis weapon has seen some use, but is reliable.";
+			qualityDesc = "\n\nQuality: [#FFFFFF]" + quality.title() + "[]\nThis weapon has seen some use, but is reliable.";
 		} else if (quality == WeaponQuality.MAINTAINED) {
-			qualityDesc = "\n\nQuality: [#00FF00]Maintained[]\nThis weapon has been exceptionally well maintained.";
+			qualityDesc = "\n\nQuality: [#00FF00]" + quality.title() + "[]\nThis weapon has been exceptionally well maintained.";
 		} else if (quality == WeaponQuality.FLAWLESS) {
-			qualityDesc = "\n\nQuality: [#00FFFF]Flawless[]\nThis weapon is flawless and shines brilliantly.";
+			qualityDesc = "\n\nQuality: [#00FFFF]" + quality.title() + "[]\nThis weapon is flawless and shines brilliantly.";
 		} else if (quality == WeaponQuality.MASTERWORK) {
-			qualityDesc = "\n\nQuality: [#FFD700]Masterwork[]\nThis weapon is a true masterwork, probably made by a good Smith =).";
+			qualityDesc = "\n\nQuality: [#FFD700]" + quality.title() + "[]\nThis weapon is a true masterwork, probably made by a good Smith =).";
 		}
 
 		// 2. EXPLICIT ELEMENT DESCRIPTIONS
 		String elementDesc = "";
 		if (element != null && element != Element.NONE) {
-			String elemName = element.name().substring(0, 1).toUpperCase() + element.name().substring(1).toLowerCase();
-			
-			if (element.isSeen()) {
-				elementDesc = "\n\nElement: " + elemName + "\n";
-				switch (element) {
-					case ABYSSAL: elementDesc += "Draws power from the void, occasionally blinding enemies."; break;
-					case LUMINOUS: elementDesc += "Burns bright, dealing devastating damage to undead and demonic foes."; break;
-					case SANGUINE: elementDesc += "Deals more damage as you lose health, and occasionally heals you."; break;
-					case CHAOTIC: elementDesc += "Inflicts random debilitating debuffs on your target."; break;
-					case INFERNAL: elementDesc += "Has a high chance to set enemies ablaze."; break;
-					case GLACIAL: elementDesc += "Freezes and chills enemies, stopping them in their tracks."; break;
-					case GILDED: elementDesc += "Gains bonus damage based on the amount of gold you carry."; break;
-					case VOLTAIC: elementDesc += "Fires arcs of lightning to strike nearby enemies."; break;
-					case CAUSTIC: elementDesc += "Coats the enemy in highly corrosive acid."; break;
-					case ZEPHYR: elementDesc += "Increases your physical attack reach by 1 tile."; break;
-					case TERRAN: elementDesc += "Occasionally blasts enemies backwards with a shockwave."; break;
-				}
-			} else {
-				elementDesc = "\n\nElement: ???\n";
-				elementDesc += "A mysterious element.\n\nIdentify a weapon imbued with this element to learn more about it.";
-			}
-		}
+            if (element.isSeen()) {
+                elementDesc = "\n\nElement: " + element.displayName() + "\n";
+                elementDesc += element.desc();
+            } else {
+                elementDesc = "\n\nElement: ???\n";
+                elementDesc += "A mysterious element.\n\nIdentify a weapon imbued with this element to learn more about it.";
+            }
+        }
 
-		// 3. EXPLICIT BLESSING DESCRIPTIONS
-		String blessingDesc = "";
-		if (blessing != null) {
-			if (Catalog.isSeen(blessing.getClass())) {
-				blessingDesc = "\n\nBlessing: [#FFD700]" + blessing.name() + "[]\n";
+        // 3. EXPLICIT BLESSING DESCRIPTIONS
+        String blessingDesc = "";
+        if (blessing != null) {
+            if (Catalog.isSeen(blessing.getClass())) {
+                blessingDesc = "\n\nBlessing: [#FFD700]" + blessing.name() + "[]\n";
+                blessingDesc += blessing.desc();
+            } else {
+                blessingDesc = "\n\nBlessing: ???\n";
+                blessingDesc += "A mysterious blessing.\n\nIdentify a weapon imbued with this blessing to learn more about it.";
+            }
+        }
 
-				if (blessing.name().equals("GlorySeeker")) {
-					blessingDesc += "A sentient blade that feeds on souls to level up, fires golden lasers, and cheers you on!";
-				} else if (blessing.name().equals("Phasing")) {
-					blessingDesc += "Grants permanent vision through walls and allows attacks to pass through solid matter.";
-				} else if (blessing.name().equals("Guided")) {
-					blessingDesc += "Never misses an attack and occasionally strikes weakpoints for massive critical damage.";
-				} else if (blessing.name().equals("Bloodbound")) {
-					blessingDesc += "Ties its power to your life force, growing stronger as you spill blood.";
-				} else if (blessing.name().equals("Captivating")) {
-					blessingDesc += "Charms enemies on strike, bending them to your will.";
-				} else if (blessing.name().equals("Harmonized")) {
-					blessingDesc += "A perfectly balanced blade that resonates with your movements.";
-				} else if (blessing.name().equals("Radiant")) {
-					blessingDesc += "Emits a brilliant aura that purges darkness and sears enemies.";
-				} else if (blessing.name().equals("ShapedCharge")) {
-					blessingDesc += "Unleashes devastating explosive damage on impact.";
-				} else {
-					blessingDesc += "An ancient, powerful blessing.";
-				}
-			} else {
-				blessingDesc = "\n\nBlessing: ???\n";
-				blessingDesc += "A mysterious blessing.\n\nIdentify a weapon imbued with this blessing to learn more about it.";
-			}
-		}
-
-		return desc + qualityDesc + elementDesc + blessingDesc;
+        return desc + qualityDesc + elementDesc + blessingDesc;
 	}
 
 	@Override
