@@ -1,21 +1,3 @@
-/*
- * The Withering Abyss
- * Copyright (C) 2014-2026 Evan Debenham
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
-
 package com.shatteredpixel.shatteredpixeldungeon.levels;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
@@ -25,11 +7,12 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Hunger;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
-import com.shatteredpixel.shatteredpixeldungeon.items.food.MysteryMeat;
-import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfHealing;
+import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
+import com.shatteredpixel.shatteredpixeldungeon.items.armor.LeatherArmor;
+import com.shatteredpixel.shatteredpixeldungeon.items.food.SmallRation;
+import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfStrength;
-import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfIdentify;
-import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfTeleportation;
+import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.Shortsword;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.ThrowingStone;
@@ -37,14 +20,17 @@ import com.shatteredpixel.shatteredpixeldungeon.levels.features.LevelTransition;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap;
 import com.shatteredpixel.shatteredpixeldungeon.levels.traps.WornDartTrap;
-import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Sungrass;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.MobSprite;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.RatSprite;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndMessage;
 import com.watabou.noosa.Game;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Point;
+
+import java.util.Arrays;
 
 public class TutorialLevel extends Level {
 
@@ -53,23 +39,27 @@ public class TutorialLevel extends Level {
         color2 = 0x59994a;
     }
 
-    private static final int ROOM_WIDTH = 10;
-    private static final int ROOM_HEIGHT = 8;
-    private static final int SEPARATOR = 3;
+    private static final int ROOM_SIZE = 5; // Internal size 5x5
+    private static final int STAGE_COUNT = 10;
 
     private int currentStage = 0;
     private boolean stageLocked = false;
     private boolean waitingForNextRoom = false;
-    private static final int STAGE_COUNT = 8;
+    
+    // New variable to track if the player has equipped the cursed item yet
+    private boolean artifactEquipped = false;
 
-    private static final int STAGE_EQUIP = 0;
-    private static final int STAGE_COMBAT = 1;
-    private static final int STAGE_THROWING = 2;
-    private static final int STAGE_FOOD = 3;
-    private static final int STAGE_POTIONS = 4;
-    private static final int STAGE_SCROLLS = 5;
-    private static final int STAGE_STRENGTH = 6;
+    // The 10 specific rooms
+    private static final int STAGE_MOVE = 0;
+    private static final int STAGE_EQUIP = 1;
+    private static final int STAGE_COMBAT = 2;
+    private static final int STAGE_STRENGTH = 3;
+    private static final int STAGE_CURSED = 4;
+    private static final int STAGE_THROWING = 5;
+    private static final int STAGE_PLANTS = 6;
     private static final int STAGE_TRAPS = 7;
+    private static final int STAGE_FOOD = 8;
+    private static final int STAGE_UPGRADE = 9;
 
     private int initialSTR = 10;
 
@@ -79,50 +69,94 @@ public class TutorialLevel extends Level {
     @Override
     public String waterTex() { return Assets.Environment.WATER_SEWERS; }
 
+    // Helper to get the center coordinate of any room in the 5x2 snake grid
+    private Point getRoomCenter(int stage) {
+        int col = stage < 5 ? stage : 9 - stage; // 0->4 goes right, 5->9 goes left
+        int row = stage < 5 ? 0 : 1;             // 0->4 is top row, 5->9 is bottom row
+        int cx = 4 + col * (ROOM_SIZE + 1);
+        int cy = 4 + row * (ROOM_SIZE + 1);
+        return new Point(cx, cy);
+    }
+
     @Override
     protected boolean build() {
-        int width = ROOM_WIDTH * STAGE_COUNT + SEPARATOR * (STAGE_COUNT - 1) + 1;
-        setSize(width, ROOM_HEIGHT + 4);
+        setSize(32, 32); 
+        
+        map = new int[length()];
+        Arrays.fill(map, Terrain.WALL);
 
-        for (int i = 0; i < length(); i++) { map[i] = Terrain.WALL; }
-
-        // Draw rooms, shifted right by 1
+        // Pre-carve all 10 rooms
         for (int stage = 0; stage < STAGE_COUNT; stage++) {
-            int xOffset = stage * (ROOM_WIDTH + SEPARATOR) + 1;   // shifted by 1
-            Painter.fill(this, xOffset + 1, 2, ROOM_WIDTH - 2, ROOM_HEIGHT - 2, Terrain.EMPTY);
-            Painter.fill(this, xOffset, 1, ROOM_WIDTH, 1, Terrain.WALL);
-            Painter.fill(this, xOffset, ROOM_HEIGHT, ROOM_WIDTH, 1, Terrain.WALL);
-            Painter.fill(this, xOffset, 2, 1, ROOM_HEIGHT - 2, Terrain.WALL);
-            Painter.fill(this, xOffset + ROOM_WIDTH - 1, 2, 1, ROOM_HEIGHT - 2, Terrain.WALL);
+            Point c = getRoomCenter(stage);
+            Painter.fill(this, c.x - 2, c.y - 2, ROOM_SIZE, ROOM_SIZE, Terrain.EMPTY);
         }
 
-        // Draw corridors, shifted right by 1
+        // Place standard open doors initially so the engine's pathfinder doesn't delete the map
         for (int stage = 0; stage < STAGE_COUNT - 1; stage++) {
-            int corridorX = (stage + 1) * (ROOM_WIDTH + SEPARATOR) - 2 + 1;   // shifted by 1
-            Painter.fill(this, corridorX, 2, 2, ROOM_HEIGHT - 2, Terrain.WALL);
+            Point c = getRoomCenter(stage);
+            int doorPos;
+            if (stage < 4) {
+                doorPos = pointToCell(new Point(c.x + 3, c.y));
+            } else if (stage == 4) {
+                doorPos = pointToCell(new Point(c.x, c.y + 3));
+            } else {
+                doorPos = pointToCell(new Point(c.x - 3, c.y));
+            }
+            map[doorPos] = Terrain.DOOR;
         }
 
-        // Entrance: spawn inside the first room, with the rest of the tutorial rooms placed to the right.
-        int entrancePos = pointToCell(new Point(25, 4));
-        map[entrancePos] = Terrain.EMPTY;
+        // Room 6 (Throwing) - Safely place a chasm wall on the right side of the room
+        Point c5 = getRoomCenter(STAGE_THROWING);
+        for (int y = c5.y - 2; y <= c5.y + 2; y++) {
+            map[pointToCell(new Point(c5.x + 1, y))] = Terrain.CHASM;
+        }
 
-        // Exit: we want at the shifted position of the old exit
-        int exitPosRoom = (STAGE_COUNT - 1) * (ROOM_WIDTH + SEPARATOR) + ROOM_WIDTH - 2;
-        int exitPos = exitPosRoom + 1 + width() * 4;   // shifted by 1 in x, then y offset
-        map[exitPos] = Terrain.EXIT;
-        this.exit = exitPos;
+        // Room 7 (Plants) - Add High Grass
+        Point c6 = getRoomCenter(STAGE_PLANTS);
+        for(int i=-2; i<=2; i++) {
+            for(int j=-2; j<=2; j++) {
+                if ((i+j)%2 == 0) {
+                    map[pointToCell(new Point(c6.x+i, c6.y+j))] = Terrain.HIGH_GRASS;
+                }
+            }
+        }
 
-        transitions.add(new LevelTransition(this, exitPos, LevelTransition.Type.REGULAR_EXIT));
-        // Set the tile to the left of the exit to wall
-        map[exitPos - 1] = Terrain.WALL;
+        // EXPLICIT ENTRANCE FIX: Assign the Entrance Transition so the player spawns here
+        this.entrance = pointToCell(getRoomCenter(0));
+        map[this.entrance] = Terrain.ENTRANCE;
+        transitions.add(new LevelTransition(this, this.entrance, LevelTransition.Type.REGULAR_ENTRANCE));
+
+        // Exit in Room 10
+        this.exit = pointToCell(getRoomCenter(9));
+        map[this.exit] = Terrain.EXIT;
+        transitions.add(new LevelTransition(this, this.exit, LevelTransition.Type.REGULAR_EXIT));
 
         return true;
     }
 
+    // This method replaces the open doors with locked doors instantly once the level actually loads
+    public void closeAllDoors() {
+        for (int stage = 0; stage < STAGE_COUNT - 1; stage++) {
+            if (stage >= currentStage) {
+                Point c = getRoomCenter(stage);
+                int doorPos;
+                if (stage < 4) {
+                    doorPos = pointToCell(new Point(c.x + 3, c.y));
+                } else if (stage == 4) {
+                    doorPos = pointToCell(new Point(c.x, c.y + 3));
+                } else {
+                    doorPos = pointToCell(new Point(c.x - 3, c.y));
+                }
+                set(doorPos, Terrain.LOCKED_DOOR); 
+                GameScene.updateMap(doorPos);
+            }
+        }
+        Dungeon.observe();
+    }
 
     @Override
     public int entrance() {
-        return 0 + width() * 4;
+        return this.entrance;
     }
 
     @Override
@@ -130,48 +164,63 @@ public class TutorialLevel extends Level {
 
     @Override
     protected void createMobs() {
-        int combatRoomX = STAGE_COMBAT * (ROOM_WIDTH + SEPARATOR) + 1;
         Mob combatMob = new TutorialDummy();
-        combatMob.pos = pointToCell(new Point(combatRoomX + 5, 4));
+        combatMob.pos = pointToCell(getRoomCenter(STAGE_COMBAT));
         mobs.add(combatMob);
 
-        int throwingRoomX = STAGE_THROWING * (ROOM_WIDTH + SEPARATOR) + 1;
+        Point c5 = getRoomCenter(STAGE_THROWING);
         Mob throwingMob = new TutorialDummy();
-        throwingMob.pos = pointToCell(new Point(throwingRoomX + 7, 4));
+        throwingMob.pos = pointToCell(new Point(c5.x + 2, c5.y));
         mobs.add(throwingMob);
 
-        int trapsRoomX = STAGE_TRAPS * (ROOM_WIDTH + SEPARATOR) + 1;
+        // Room 8 (Traps) - Make it visible by default!
+        Point c7 = getRoomCenter(STAGE_TRAPS);
         WornDartTrap trap = new WornDartTrap();
-        trap.pos = pointToCell(new Point(trapsRoomX + 5, 4));
+        trap.pos = pointToCell(c7);
+        trap.visible = true; // Forcing the trap to be completely visible
         traps.put(trap.pos, trap);
 
         TutorialManagerMob manager = new TutorialManagerMob();
-        int exitPos = (STAGE_COUNT - 1) * (ROOM_WIDTH + SEPARATOR) + ROOM_WIDTH - 2 + 1 + width() * 4;
-        manager.pos = exitPos;
+        manager.pos = this.exit; 
         mobs.add(manager);
     }
 
     @Override
     protected void createItems() {
-        drop(new Shortsword(), 4 + width() * 4);
-        int throwingRoomX = STAGE_THROWING * (ROOM_WIDTH + SEPARATOR) + 1;
-        Heap throwingHeap = drop(new ThrowingStone(), pointToCell(new Point(throwingRoomX + 3, 4)));
-        throwingHeap.type = Heap.Type.HEAP;
+        // Room 1: Guidebook (Tome of Dungeon Mastery)
+        Point c0 = getRoomCenter(STAGE_MOVE);
+        drop(new Guidebook(), pointToCell(new Point(c0.x + 1, c0.y)));
+
+        // Room 2: Equip Sword
+        drop(new Shortsword(), pointToCell(getRoomCenter(STAGE_EQUIP)));
         
-        int foodRoomX = STAGE_FOOD * (ROOM_WIDTH + SEPARATOR) + 1;
-        drop(new MysteryMeat(), pointToCell(new Point(foodRoomX + 5, 4)));
-        
-        int potionsRoomX = STAGE_POTIONS * (ROOM_WIDTH + SEPARATOR) + 1;
-        drop(new PotionOfHealing(), pointToCell(new Point(potionsRoomX + 4, 4)));
-        drop(new PotionOfStrength(), pointToCell(new Point(potionsRoomX + 6, 4)));
-        
-        int scrollsRoomX = STAGE_SCROLLS * (ROOM_WIDTH + SEPARATOR) + 1;
-        drop(new ScrollOfIdentify(), pointToCell(new Point(scrollsRoomX + 3, 4)));
-        drop(new ScrollOfUpgrade(), pointToCell(new Point(scrollsRoomX + 5, 4)));
-        drop(new ScrollOfTeleportation(), pointToCell(new Point(scrollsRoomX + 7, 4)));
-        
-        int strengthRoomX = STAGE_STRENGTH * (ROOM_WIDTH + SEPARATOR) + 1;
-        drop(new PotionOfStrength(), pointToCell(new Point(strengthRoomX + 5, 4)));
+        // Room 4: Strength & Armor
+        Point c3 = getRoomCenter(STAGE_STRENGTH);
+        drop(new PotionOfStrength(), pointToCell(new Point(c3.x - 1, c3.y)));
+        drop(new LeatherArmor(), pointToCell(new Point(c3.x + 1, c3.y)));
+
+        // Room 5: Cursed Artifact & Scroll
+        Point c4 = getRoomCenter(STAGE_CURSED);
+        DriedRose cursedItem = new DriedRose();
+        cursedItem.cursed = true;
+        drop(cursedItem, pointToCell(new Point(c4.x - 1, c4.y)));
+        drop(new ScrollOfRemoveCurse(), pointToCell(new Point(c4.x + 1, c4.y)));
+
+        // Room 6: Throwing Stones 
+        Point c5 = getRoomCenter(STAGE_THROWING);
+        ThrowingStone stones = new ThrowingStone();
+        stones.quantity(5);
+        drop(stones, pointToCell(new Point(c5.x - 1, c5.y)));
+
+        // Room 7: Plants 
+        drop(new Sungrass.Seed(), pointToCell(getRoomCenter(STAGE_PLANTS)));
+
+        // Room 9: Food
+        drop(new SmallRation(), pointToCell(getRoomCenter(STAGE_FOOD)));
+
+        // Room 10: Upgrade Scroll
+        Point c9 = getRoomCenter(STAGE_UPGRADE);
+        drop(new ScrollOfUpgrade(), pointToCell(new Point(c9.x + 1, c9.y)));
     }
 
     @Override
@@ -184,6 +233,7 @@ public class TutorialLevel extends Level {
         bundle.put("stageLocked", stageLocked);
         bundle.put("waitingForNextRoom", waitingForNextRoom);
         bundle.put("initialSTR", initialSTR);
+        bundle.put("artifactEquipped", artifactEquipped);
     }
 
     @Override
@@ -193,32 +243,29 @@ public class TutorialLevel extends Level {
         stageLocked = bundle.getBoolean("stageLocked");
         waitingForNextRoom = bundle.getBoolean("waitingForNextRoom");
         initialSTR = bundle.getInt("initialSTR");
+        artifactEquipped = bundle.getBoolean("artifactEquipped");
     }
 
     public void advanceStage() {
         if (currentStage >= STAGE_COUNT - 1) {
-            int exitPos = (STAGE_COUNT - 1) * (ROOM_WIDTH + SEPARATOR) + ROOM_WIDTH - 2 + 1 + width() * 4;
-            set(exitPos - 1, Terrain.DOOR);
-            GameScene.updateMap(exitPos - 1);
-            Dungeon.observe();
-
-            showTutorialMessage(Messages.get(TutorialLevel.class, "complete"), "You have finished the tutorial! Step onto the stairs to begin your descent.");
+            showTutorialMessage("Tutorial Complete", "You have finished the tutorial! Step onto the stairs to begin your descent.");
             stageLocked = true;
             return;
         }
 
-        int roomRightWall = currentStage * (ROOM_WIDTH + SEPARATOR) + 1 + ROOM_WIDTH - 1;
-        int nextRoomLeftWall = (currentStage + 1) * (ROOM_WIDTH + SEPARATOR) + 1;
-
-        for (int x = roomRightWall; x <= nextRoomLeftWall; x++) {
-            int cell = x + width() * 4;
-            if (x == roomRightWall + 2) {
-                set(cell, Terrain.DOOR);
-            } else {
-                set(cell, Terrain.EMPTY);
-            }
-            GameScene.updateMap(cell);
+        // Unlock the door to the next room!
+        Point c = getRoomCenter(currentStage);
+        int doorPos;
+        if (currentStage < 4) {
+            doorPos = pointToCell(new Point(c.x + 3, c.y)); 
+        } else if (currentStage == 4) {
+            doorPos = pointToCell(new Point(c.x, c.y + 3)); 
+        } else {
+            doorPos = pointToCell(new Point(c.x - 3, c.y)); 
         }
+
+        set(doorPos, Terrain.DOOR); 
+        GameScene.updateMap(doorPos);
         Dungeon.observe();
 
         currentStage++;
@@ -227,16 +274,23 @@ public class TutorialLevel extends Level {
 
     public void showStageMessage() {
         stageLocked = true;
+        String title = "Tutorial";
+        String text = "";
+        
         switch (currentStage) {
-            case STAGE_EQUIP: showTutorialMessage(Messages.get(TutorialLevel.class, "walking_title"), Messages.get(TutorialLevel.class, "walking_text")); break;
-            case STAGE_COMBAT: showTutorialMessage(Messages.get(TutorialLevel.class, "combat_title"), Messages.get(TutorialLevel.class, "combat_text")); break;
-            case STAGE_THROWING: showTutorialMessage(Messages.get(TutorialLevel.class, "throwing_title"), Messages.get(TutorialLevel.class, "throwing_text")); break;
-            case STAGE_FOOD: showTutorialMessage(Messages.get(TutorialLevel.class, "food_title"), Messages.get(TutorialLevel.class, "food_text")); break;
-            case STAGE_POTIONS: showTutorialMessage(Messages.get(TutorialLevel.class, "potions_title"), Messages.get(TutorialLevel.class, "potions_text")); break;
-            case STAGE_SCROLLS: showTutorialMessage(Messages.get(TutorialLevel.class, "scrolls_title"), Messages.get(TutorialLevel.class, "scrolls_text")); break;
-            case STAGE_STRENGTH: showTutorialMessage(Messages.get(TutorialLevel.class, "strength_title"), Messages.get(TutorialLevel.class, "strength_text")); break;
-            case STAGE_TRAPS: showTutorialMessage(Messages.get(TutorialLevel.class, "traps_title"), Messages.get(TutorialLevel.class, "traps_text")); break;
+            case STAGE_MOVE: text = "Pick up the Guidebook. Use WASD, arrow keys, or click to move."; break;
+            case STAGE_EQUIP: text = "Pick up the sword and equip it from your inventory."; break;
+            case STAGE_COMBAT: text = "Walk into the enemy to attack it."; break;
+            case STAGE_STRENGTH: text = "Drink the Potion of Strength to wear heavier armor."; break;
+            case STAGE_CURSED: text = "Pick up the artifact from the floor and equip it in your Misc slot."; break;
+            case STAGE_THROWING: text = "You can't reach the enemy. Pick up the stones and throw them over the gap."; break;
+            case STAGE_PLANTS: text = "If you stand on tall grass, there is a chance that it drops water drops to heal yourself with, and there's also a chance it drops seeds."; break;
+            case STAGE_TRAPS: text = "Watch out for hidden traps on the floor!"; break;
+            case STAGE_FOOD: text = "Moving makes you hungry. Eat the ration to restore your energy."; break;
+            case STAGE_UPGRADE: text = "Pick up the Scroll of Upgrade and take the stairs down."; break;
         }
+        
+        showTutorialMessage(title, text);
     }
 
     private void showTutorialMessage(String title, String text) {
@@ -256,10 +310,13 @@ public class TutorialLevel extends Level {
         if (Dungeon.hero == null || !Dungeon.hero.isAlive()) return;
 
         if (waitingForNextRoom) {
-            int heroX = Dungeon.hero.pos % width();
-            int nextRoomX = currentStage * (ROOM_WIDTH + SEPARATOR) + 1;
-
-            if (heroX >= nextRoomX + 1) {
+            int heroPos = Dungeon.hero.pos;
+            Point c = getRoomCenter(currentStage);
+            
+            // Check if hero has entered the new room
+            int hX = heroPos % width();
+            int hY = heroPos / width();
+            if (Math.abs(hX - c.x) <= 2 && Math.abs(hY - c.y) <= 2) {
                 waitingForNextRoom = false;
                 showStageMessage();
             }
@@ -272,64 +329,64 @@ public class TutorialLevel extends Level {
         Hunger hunger = hero.buff(Hunger.class);
 
         switch (currentStage) {
+            case STAGE_MOVE:
+                Point c0 = getRoomCenter(STAGE_MOVE);
+                if (hero.pos % width() >= c0.x + 1) advanceStage(); 
+                break;
             case STAGE_EQUIP:
-                if (hero.belongings.weapon != null && hero.belongings.weapon instanceof Shortsword) { advanceStage(); }
+                if (hero.belongings.weapon != null && hero.belongings.weapon instanceof Shortsword) advanceStage();
                 break;
             case STAGE_COMBAT:
-                boolean combatDummyAlive = false;
-                for (Mob mob : mobs) {
-                    if (mob instanceof TutorialDummy && mob.isAlive()) {
-                        int mobX = mob.pos % width();
-                        int roomX = STAGE_COMBAT * (ROOM_WIDTH + SEPARATOR) + 1;
-                        if (mobX >= roomX && mobX < roomX + ROOM_WIDTH) {
-                            combatDummyAlive = true; break;
-                        }
-                    }
-                }
-                if (!combatDummyAlive) { advanceStage(); }
-                break;
             case STAGE_THROWING:
-                boolean throwingDummyAlive = false;
+                boolean dummyAlive = false;
+                Point center = getRoomCenter(currentStage);
                 for (Mob mob : mobs) {
                     if (mob instanceof TutorialDummy && mob.isAlive()) {
-                        int mobX = mob.pos % width();
-                        int roomX = STAGE_THROWING * (ROOM_WIDTH + SEPARATOR) + 1;
-                        if (mobX >= roomX && mobX < roomX + ROOM_WIDTH) {
-                            throwingDummyAlive = true; break;
+                        int mX = mob.pos % width();
+                        int mY = mob.pos / width();
+                        if (Math.abs(mX - center.x) <= 2 && Math.abs(mY - center.y) <= 2) {
+                            dummyAlive = true; 
+                            break;
                         }
                     }
                 }
-                if (!throwingDummyAlive) { advanceStage(); }
+                if (!dummyAlive) advanceStage();
                 break;
-            case STAGE_FOOD: if (hunger != null && !hunger.isStarving()) { advanceStage(); } break;
-            case STAGE_POTIONS:
-                if (hero.belongings.getItem(PotionOfHealing.class) != null && hero.belongings.getItem(PotionOfStrength.class) != null) { advanceStage(); }
+            case STAGE_STRENGTH:
+                if (hero.STR > initialSTR && hero.belongings.armor != null) advanceStage();
                 break;
-            case STAGE_SCROLLS:
-                if (hero.belongings.getItem(ScrollOfIdentify.class) != null && hero.belongings.getItem(ScrollOfUpgrade.class) != null && hero.belongings.getItem(ScrollOfTeleportation.class) != null) { advanceStage(); }
+            case STAGE_CURSED:
+                boolean roseEquipped = false;
+                DriedRose rose = hero.belongings.getItem(DriedRose.class);
+                
+                // Let the item check if it is equipped instead of guessing the slot names
+                if (rose != null && rose.isEquipped(hero)) {
+                    roseEquipped = true;
+                }
+                
+                // If they just put it on, trigger the popup
+                if (!artifactEquipped && roseEquipped) {
+                    artifactEquipped = true;
+                    showTutorialMessage("Cursed Artifact", "As you can see on this artifact its cursed, for that it gives curse removing scrolls, Use the curse removing scroll to get rid of the curse.");
+                } 
+                // Once they've seen the popup and used the scroll to uncurse it, let them progress!
+                else if (artifactEquipped && hero.belongings.getItem(ScrollOfRemoveCurse.class) == null) {
+                    advanceStage();
+                }
                 break;
-            case STAGE_STRENGTH: if (hero.STR > initialSTR) { advanceStage(); } break;
+            case STAGE_PLANTS:
+                if (hero.belongings.getItem(Sungrass.Seed.class) != null) advanceStage();
+                break;
             case STAGE_TRAPS:
-                int trapPos = pointToCell(new Point(STAGE_TRAPS * (ROOM_WIDTH + SEPARATOR) + 5 + 1, 4));
-                Trap trap = traps.get(trapPos);
-                if (trap == null || !trap.active) { advanceStage(); }
+                Trap trap = traps.get(pointToCell(getRoomCenter(STAGE_TRAPS)));
+                if (trap == null || !trap.active) advanceStage();
                 break;
-        }
-    }
-
-    @Override
-    public String tileName(int tile) {
-        switch (tile) {
-            case Terrain.WATER: return Messages.get(SewerLevel.class, "water_name");
-            default: return super.tileName(tile);
-        }
-    }
-
-    @Override
-    public String tileDesc(int tile) {
-        switch (tile) {
-            case Terrain.EMPTY_DECO: return Messages.get(SewerLevel.class, "empty_deco_desc");
-            default: return super.tileDesc(tile);
+            case STAGE_FOOD: 
+                if (hunger != null && !hunger.isStarving()) advanceStage(); 
+                break;
+            case STAGE_UPGRADE: 
+                if (hero.belongings.getItem(ScrollOfUpgrade.class) != null) advanceStage(); 
+                break;
         }
     }
 
@@ -339,7 +396,9 @@ public class TutorialLevel extends Level {
 
     public static class TutorialDummy extends Mob {
         {
-            spriteClass = TutorialDummySprite.class;
+            // PERFECT RAT FIX: Instead of drawing the raw asset, we tell the engine 
+            // to use the actual RatSprite class which handles all the animation framing!
+            spriteClass = RatSprite.class;
             HP = HT = 20;
             EXP = 2;
             state = PASSIVE;
@@ -352,18 +411,7 @@ public class TutorialLevel extends Level {
         
         @Override public void die(Object cause) {
             super.die(cause);
-            GLog.i(Messages.get(this, "defeated"));
-        }
-        
-        public static class TutorialDummySprite extends MobSprite {
-            public TutorialDummySprite() {
-                super();
-                texture(Assets.Sprites.RAT); 
-            }
-            @Override public void update() {
-                super.update();
-                alpha(0.5f);
-            }
+            GLog.i("Dummy defeated!");
         }
     }
 
@@ -393,20 +441,22 @@ public class TutorialLevel extends Level {
         @Override public int attackSkill(Char target) { return 0; }
         @Override public int defenseSkill(Char attacker) { return 999; }
 
-
         @Override
         protected boolean act() {
             if (Dungeon.level instanceof TutorialLevel) {
                 TutorialLevel level = (TutorialLevel) Dungeon.level;
                 
                 if (tickCounter < 3) {
+                    if (tickCounter == 0) {
+                        level.closeAllDoors();
+                    }
                     tickCounter++;
                     spend(TICK);
                     return true;
                 }
                 if (tickCounter == 3) {
                     tickCounter++;
-                    if (level.currentStage == STAGE_EQUIP && !level.waitingForNextRoom) {
+                    if (level.currentStage == STAGE_MOVE && !level.waitingForNextRoom) {
                         level.showStageMessage();
                     }
                 } else {
