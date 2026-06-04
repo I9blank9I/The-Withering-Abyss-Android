@@ -355,8 +355,8 @@ public class MeleeWeapon extends Weapon {
 	@Override
 	public float delayFactor(Char owner) {
 		float d = super.delayFactor(owner);
-		if (quality == WeaponQuality.FLAWLESS) d *= 0.9f; // 10% faster attacks!
-		if (quality == WeaponQuality.MASTERWORK) d *= 0.75f; // 25% faster attacks!
+		if (quality == WeaponQuality.FLAWLESS) d *= 0.9f; // 10% faster attacks
+		if (quality == WeaponQuality.MASTERWORK) d *= 0.75f; // 25% faster attacks
 		return d;
 	}
 
