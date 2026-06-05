@@ -10,7 +10,6 @@ import com.shatteredpixel.shatteredpixeldungeon.items.Heap;
 import com.shatteredpixel.shatteredpixeldungeon.items.artifacts.DriedRose;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.LeatherArmor;
 import com.shatteredpixel.shatteredpixeldungeon.items.food.SmallRation;
-import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.PotionOfStrength;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.ScrollOfUpgrade;
@@ -46,8 +45,10 @@ public class TutorialLevel extends Level {
     private boolean stageLocked = false;
     private boolean waitingForNextRoom = false;
     
-    // New variable to track if the player has equipped the cursed item yet
+    // Trackers for our specific room events
     private boolean artifactEquipped = false;
+    private boolean pickedUpRation = false;
+    private boolean tutorialComplete = false;
 
     // The 10 specific rooms
     private static final int STAGE_MOVE = 0;
@@ -91,7 +92,7 @@ public class TutorialLevel extends Level {
             Painter.fill(this, c.x - 2, c.y - 2, ROOM_SIZE, ROOM_SIZE, Terrain.EMPTY);
         }
 
-        // Place standard open doors initially so the engine's pathfinder doesn't delete the map
+        // Place standard doors initially so the engine's check succeeds
         for (int stage = 0; stage < STAGE_COUNT - 1; stage++) {
             Point c = getRoomCenter(stage);
             int doorPos;
@@ -105,7 +106,7 @@ public class TutorialLevel extends Level {
             map[doorPos] = Terrain.DOOR;
         }
 
-        // Room 6 (Throwing) - Safely place a chasm wall on the right side of the room
+        // Room 6 (Throwing) - Place a chasm wall on the right side of the room
         Point c5 = getRoomCenter(STAGE_THROWING);
         for (int y = c5.y - 2; y <= c5.y + 2; y++) {
             map[pointToCell(new Point(c5.x + 1, y))] = Terrain.CHASM;
@@ -121,6 +122,11 @@ public class TutorialLevel extends Level {
             }
         }
 
+        // Room 8 (Traps) - Set the physical floor tile to be a trap
+        Point c7 = getRoomCenter(STAGE_TRAPS);
+        int trapPos = pointToCell(c7);
+        map[trapPos] = Terrain.TRAP;
+
         // EXPLICIT ENTRANCE FIX: Assign the Entrance Transition so the player spawns here
         this.entrance = pointToCell(getRoomCenter(0));
         map[this.entrance] = Terrain.ENTRANCE;
@@ -134,7 +140,7 @@ public class TutorialLevel extends Level {
         return true;
     }
 
-    // This method replaces the open doors with locked doors instantly once the level actually loads
+    // Locks the doors immediately once the scene loads
     public void closeAllDoors() {
         for (int stage = 0; stage < STAGE_COUNT - 1; stage++) {
             if (stage >= currentStage) {
@@ -173,24 +179,22 @@ public class TutorialLevel extends Level {
         throwingMob.pos = pointToCell(new Point(c5.x + 2, c5.y));
         mobs.add(throwingMob);
 
-        // Room 8 (Traps) - Make it visible by default!
+        // Room 8 (Traps)
         Point c7 = getRoomCenter(STAGE_TRAPS);
+        int trapPos = pointToCell(c7);
         WornDartTrap trap = new WornDartTrap();
-        trap.pos = pointToCell(c7);
-        trap.visible = true; // Forcing the trap to be completely visible
-        traps.put(trap.pos, trap);
+        trap.pos = trapPos; 
+        trap.visible = true; 
+        traps.put(trapPos, trap); 
 
         TutorialManagerMob manager = new TutorialManagerMob();
-        manager.pos = this.exit; 
+        // Fixed: Placed at position 0 (off-grid boundary) so the exit stairs are completely clear
+        manager.pos = 0; 
         mobs.add(manager);
     }
 
     @Override
     protected void createItems() {
-        // Room 1: Guidebook (Tome of Dungeon Mastery)
-        Point c0 = getRoomCenter(STAGE_MOVE);
-        drop(new Guidebook(), pointToCell(new Point(c0.x + 1, c0.y)));
-
         // Room 2: Equip Sword
         drop(new Shortsword(), pointToCell(getRoomCenter(STAGE_EQUIP)));
         
@@ -206,10 +210,10 @@ public class TutorialLevel extends Level {
         drop(cursedItem, pointToCell(new Point(c4.x - 1, c4.y)));
         drop(new ScrollOfRemoveCurse(), pointToCell(new Point(c4.x + 1, c4.y)));
 
-        // Room 6: Throwing Stones 
+        // Room 6: Throwing Stones (Increased to 7 stack capacity)
         Point c5 = getRoomCenter(STAGE_THROWING);
         ThrowingStone stones = new ThrowingStone();
-        stones.quantity(5);
+        stones.quantity(7);
         drop(stones, pointToCell(new Point(c5.x - 1, c5.y)));
 
         // Room 7: Plants 
@@ -234,6 +238,8 @@ public class TutorialLevel extends Level {
         bundle.put("waitingForNextRoom", waitingForNextRoom);
         bundle.put("initialSTR", initialSTR);
         bundle.put("artifactEquipped", artifactEquipped);
+        bundle.put("pickedUpRation", pickedUpRation);
+        bundle.put("tutorialComplete", tutorialComplete);
     }
 
     @Override
@@ -244,16 +250,19 @@ public class TutorialLevel extends Level {
         waitingForNextRoom = bundle.getBoolean("waitingForNextRoom");
         initialSTR = bundle.getInt("initialSTR");
         artifactEquipped = bundle.getBoolean("artifactEquipped");
+        pickedUpRation = bundle.getBoolean("pickedUpRation");
+        tutorialComplete = bundle.getBoolean("tutorialComplete");
     }
 
     public void advanceStage() {
         if (currentStage >= STAGE_COUNT - 1) {
-            showTutorialMessage("Tutorial Complete", "You have finished the tutorial! Step onto the stairs to begin your descent.");
-            stageLocked = true;
+            if (!tutorialComplete) {
+                showTutorialMessage("Tutorial Complete", "Now you're ready and finished the tutorial! Pick up the Scroll of Upgrade and take the stairs down to start your adventure.");
+                tutorialComplete = true; 
+            }
             return;
         }
 
-        // Unlock the door to the next room!
         Point c = getRoomCenter(currentStage);
         int doorPos;
         if (currentStage < 4) {
@@ -278,16 +287,16 @@ public class TutorialLevel extends Level {
         String text = "";
         
         switch (currentStage) {
-            case STAGE_MOVE: text = "Pick up the Guidebook. Use WASD, arrow keys, or click to move."; break;
-            case STAGE_EQUIP: text = "Pick up the sword and equip it from your inventory."; break;
-            case STAGE_COMBAT: text = "Walk into the enemy to attack it."; break;
+            case STAGE_MOVE: text = "Use WASD, arrow keys, or click to move."; break;
+            case STAGE_EQUIP: text = "Pick up the sword, by clicking on it, and equip it from your inventory."; break;
+            case STAGE_COMBAT: text = "Click Q near the enemy or walk into it to attack it."; break;
             case STAGE_STRENGTH: text = "Drink the Potion of Strength to wear heavier armor."; break;
             case STAGE_CURSED: text = "Pick up the artifact from the floor and equip it in your Misc slot."; break;
             case STAGE_THROWING: text = "You can't reach the enemy. Pick up the stones and throw them over the gap."; break;
             case STAGE_PLANTS: text = "If you stand on tall grass, there is a chance that it drops water drops to heal yourself with, and there's also a chance it drops seeds."; break;
-            case STAGE_TRAPS: text = "Watch out for hidden traps on the floor!"; break;
-            case STAGE_FOOD: text = "Moving makes you hungry. Eat the ration to restore your energy."; break;
-            case STAGE_UPGRADE: text = "Pick up the Scroll of Upgrade and take the stairs down."; break;
+            case STAGE_TRAPS: text = "Watch out for traps on the floor! They activate when you step on them or throw things on them."; break;
+            case STAGE_FOOD: text = "Moving and making turns makes you hungry. Eat the ration to restore your energy."; break;
+            case STAGE_UPGRADE: text = "Now you're ready and finished the tutorial! Pick up the Scroll of Upgrade and take the stairs down to start your adventure."; break;
         }
         
         showTutorialMessage(title, text);
@@ -313,7 +322,6 @@ public class TutorialLevel extends Level {
             int heroPos = Dungeon.hero.pos;
             Point c = getRoomCenter(currentStage);
             
-            // Check if hero has entered the new room
             int hX = heroPos % width();
             int hY = heroPos / width();
             if (Math.abs(hX - c.x) <= 2 && Math.abs(hY - c.y) <= 2) {
@@ -326,7 +334,6 @@ public class TutorialLevel extends Level {
         if (stageLocked) return;
 
         Hero hero = Dungeon.hero;
-        Hunger hunger = hero.buff(Hunger.class);
 
         switch (currentStage) {
             case STAGE_MOVE:
@@ -359,17 +366,14 @@ public class TutorialLevel extends Level {
                 boolean roseEquipped = false;
                 DriedRose rose = hero.belongings.getItem(DriedRose.class);
                 
-                // Let the item check if it is equipped instead of guessing the slot names
                 if (rose != null && rose.isEquipped(hero)) {
                     roseEquipped = true;
                 }
                 
-                // If they just put it on, trigger the popup
                 if (!artifactEquipped && roseEquipped) {
                     artifactEquipped = true;
                     showTutorialMessage("Cursed Artifact", "As you can see on this artifact its cursed, for that it gives curse removing scrolls, Use the curse removing scroll to get rid of the curse.");
                 } 
-                // Once they've seen the popup and used the scroll to uncurse it, let them progress!
                 else if (artifactEquipped && hero.belongings.getItem(ScrollOfRemoveCurse.class) == null) {
                     advanceStage();
                 }
@@ -382,7 +386,14 @@ public class TutorialLevel extends Level {
                 if (trap == null || !trap.active) advanceStage();
                 break;
             case STAGE_FOOD: 
-                if (hunger != null && !hunger.isStarving()) advanceStage(); 
+                // Tracking pick-up state safely
+                if (!pickedUpRation && hero.belongings.getItem(SmallRation.class) != null) {
+                    pickedUpRation = true;
+                }
+                // Progression activates strictly when the ration leaves the player inventory bag via eating
+                else if (pickedUpRation && hero.belongings.getItem(SmallRation.class) == null) {
+                    advanceStage();
+                }
                 break;
             case STAGE_UPGRADE: 
                 if (hero.belongings.getItem(ScrollOfUpgrade.class) != null) advanceStage(); 
@@ -396,11 +407,9 @@ public class TutorialLevel extends Level {
 
     public static class TutorialDummy extends Mob {
         {
-            // PERFECT RAT FIX: Instead of drawing the raw asset, we tell the engine 
-            // to use the actual RatSprite class which handles all the animation framing!
             spriteClass = RatSprite.class;
             HP = HT = 20;
-            EXP = 2;
+            EXP = 5;
             state = PASSIVE;
         }
         
