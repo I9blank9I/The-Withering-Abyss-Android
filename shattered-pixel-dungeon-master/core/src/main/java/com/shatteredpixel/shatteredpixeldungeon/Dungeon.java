@@ -261,7 +261,17 @@ public class Dungeon {
 		QuickSlotButton.reset();
 		Toolbar.swappedQuickslots = false;
 		
-		depth = 0; // Start at tutorial floor
+		// --- TUTORIAL SKIP FIX ---
+        // Check if the player has ever completed the tutorial on this device
+        com.badlogic.gdx.Preferences prefs = com.badlogic.gdx.Gdx.app.getPreferences("ShatteredPixelDungeon_Data");
+        boolean tutorialFinished = prefs.getBoolean("tutorial_finished", false);
+
+        if (tutorialFinished) {
+            depth = 1; // Skip tutorial, start in Sewers directly!
+        } else {
+            depth = 0; // First time playing, start at tutorial floor
+        }
+        // -------------------------
 		branch = 0;
 		generatedLevels.clear();
 
