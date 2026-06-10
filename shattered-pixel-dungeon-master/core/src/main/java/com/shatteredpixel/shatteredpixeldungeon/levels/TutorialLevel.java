@@ -178,7 +178,6 @@ public class TutorialLevel extends Level {
         throwingMob.pos = pointToCell(new Point(cThrow.x + 2, cThrow.y - 2)); 
         mobs.add(throwingMob);
 
-        // First Trap (Room 10) - Visible
         Point cTraps = getRoomCenter(STAGE_TRAPS);
         int trapPos = pointToCell(cTraps);
         WornDartTrap trap = new WornDartTrap();
@@ -186,7 +185,6 @@ public class TutorialLevel extends Level {
         trap.visible = true; 
         traps.put(trapPos, trap); 
         
-        // Search Room Trap (Room 11) - Hidden
         Point cSearch = getRoomCenter(STAGE_SEARCH);
         int hiddenPos = pointToCell(new Point(cSearch.x, cSearch.y + 1));
         WornDartTrap hiddenTrap = new WornDartTrap();
@@ -201,33 +199,63 @@ public class TutorialLevel extends Level {
 
     @Override
     protected void createItems() {
-        drop(new Guidebook(), pointToCell(getRoomCenter(STAGE_MOVE)));
-        drop(new Shortsword(), pointToCell(getRoomCenter(STAGE_EQUIP)));
-        drop(new PotionOfExperience(), pointToCell(getRoomCenter(STAGE_LEVELING)));
+        Point c0 = getRoomCenter(STAGE_MOVE);
+        Guidebook book = new Guidebook();
+        book.identify();
+        drop(book, pointToCell(new Point(c0.x + 2, c0.y)));
+
+        Shortsword sword = new Shortsword();
+        sword.identify();
+        drop(sword, pointToCell(getRoomCenter(STAGE_EQUIP)));
+        
+        PotionOfExperience xp = new PotionOfExperience();
+        xp.identify();
+        drop(xp, pointToCell(getRoomCenter(STAGE_LEVELING)));
 
         Point cStrength = getRoomCenter(STAGE_STRENGTH);
-        drop(new PotionOfStrength(), pointToCell(new Point(cStrength.x - 1, cStrength.y)));
-        drop(new PotionOfStrength(), pointToCell(new Point(cStrength.x - 1, cStrength.y + 1))); 
-        drop(new LeatherArmor(), pointToCell(new Point(cStrength.x + 1, cStrength.y)));
+        PotionOfStrength str1 = new PotionOfStrength();
+        str1.identify();
+        drop(str1, pointToCell(new Point(cStrength.x - 1, cStrength.y)));
+        PotionOfStrength str2 = new PotionOfStrength();
+        str2.identify();
+        drop(str2, pointToCell(new Point(cStrength.x - 1, cStrength.y + 1))); 
+        
+        LeatherArmor armor = new LeatherArmor();
+        armor.identify();
+        drop(armor, pointToCell(new Point(cStrength.x + 1, cStrength.y)));
 
         Point cCursed = getRoomCenter(STAGE_CURSED);
         DriedRose cursedItem = new DriedRose();
         cursedItem.cursed = true;
+        cursedItem.identify();
         drop(cursedItem, pointToCell(new Point(cCursed.x - 1, cCursed.y)));
-        drop(new ScrollOfRemoveCurse(), pointToCell(new Point(cCursed.x + 1, cCursed.y)));
+        
+        ScrollOfRemoveCurse rc = new ScrollOfRemoveCurse();
+        rc.identify();
+        drop(rc, pointToCell(new Point(cCursed.x + 1, cCursed.y)));
 
-        drop(new WandOfMagicMissile(), pointToCell(getRoomCenter(STAGE_WAND)));
+        WandOfMagicMissile wand = new WandOfMagicMissile();
+        wand.identify();
+        drop(wand, pointToCell(getRoomCenter(STAGE_WAND)));
 
         Point cThrow = getRoomCenter(STAGE_THROWING);
         ThrowingStone stones = new ThrowingStone();
         stones.quantity(7); 
+        stones.identify();
         drop(stones, pointToCell(new Point(cThrow.x - 1, cThrow.y)));
 
-        drop(new Sungrass.Seed(), pointToCell(getRoomCenter(STAGE_PLANTS)));
-        drop(new SmallRation(), pointToCell(getRoomCenter(STAGE_FOOD)));
+        Sungrass.Seed seed = new Sungrass.Seed();
+        seed.identify();
+        drop(seed, pointToCell(getRoomCenter(STAGE_PLANTS)));
+        
+        SmallRation ration = new SmallRation();
+        ration.identify();
+        drop(ration, pointToCell(getRoomCenter(STAGE_FOOD)));
         
         Point cUpgrade = getRoomCenter(STAGE_UPGRADE);
-        drop(new ScrollOfUpgrade(), pointToCell(new Point(cUpgrade.x + 1, cUpgrade.y)));
+        ScrollOfUpgrade upg = new ScrollOfUpgrade();
+        upg.identify();
+        drop(upg, pointToCell(new Point(cUpgrade.x + 1, cUpgrade.y)));
     }
 
     @Override
@@ -297,7 +325,7 @@ public class TutorialLevel extends Level {
             case STAGE_THROWING: text = "You can't reach the enemy. Pick up the stones and throw them over the gap."; break;
             case STAGE_PLANTS: text = "If you stand on tall grass, there is a chance that it drops water drops to heal yourself with, and there's also a chance it drops seeds."; break;
             case STAGE_TRAPS: text = "Watch out for traps on the floor! They activate when you step on them or throw things on them."; break;
-            case STAGE_SEARCH: text = "Rooms and hallways can contain hidden doors and traps. Click the magnifying glass Search button (or double-tap it) to reveal the hidden trap in this room."; break;
+            case STAGE_SEARCH: text = "Rooms and hallways can contain hidden traps. Click the magnifying glass Search button (or double-tap it) to reveal the hidden trap in this room."; break;
             case STAGE_FOOD: text = "Moving and making turns makes you hungry. Eat the ration to restore your energy."; break;
             case STAGE_UPGRADE: text = "Now you're ready and finished the tutorial! Pick up the Scroll of Upgrade and take the stairs down to start your adventure."; break;
         }
@@ -306,6 +334,8 @@ public class TutorialLevel extends Level {
     }
 
     private void showTutorialMessage(String title, String text) {
+        GLog.i(title + ": " + text); 
+        
         Game.runOnRenderThread(() -> {
             String fullText = title + "\n\n" + text;
             GameScene.show(new WndMessage(fullText) {
@@ -316,6 +346,16 @@ public class TutorialLevel extends Level {
                 }
             });
         });
+    }
+
+    private boolean isItemOnFloor(Class<?> itemClass) {
+        for (int i = 0; i < length(); i++) {
+            Heap heap = heaps.get(i);
+            if (heap != null && heap.peek() != null && itemClass.isInstance(heap.peek())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void checkStageCompletion() {
@@ -367,9 +407,9 @@ public class TutorialLevel extends Level {
             case STAGE_LEVELING:
                 if (hero.lvl > 1) {
                     advanceStage();
-                } else if (hero.belongings.getItem(PotionOfExperience.class) == null) {
-                    // FAILSAFE: Direct inject into backpack
+                } else if (hero.belongings.getItem(PotionOfExperience.class) == null && !isItemOnFloor(PotionOfExperience.class)) {
                     PotionOfExperience xp = new PotionOfExperience();
+                    xp.identify();
                     xp.collect(hero.belongings.backpack);
                     GLog.w("You lost your Potion of Experience! Added another to your bag.");
                 }
@@ -377,9 +417,9 @@ public class TutorialLevel extends Level {
             case STAGE_STRENGTH:
                 if (hero.STR >= 12 && hero.belongings.armor != null) {
                     advanceStage();
-                } else if (hero.STR < 12 && hero.belongings.getItem(PotionOfStrength.class) == null) {
-                    // FAILSAFE: Direct inject into backpack
+                } else if (hero.STR < 12 && hero.belongings.getItem(PotionOfStrength.class) == null && !isItemOnFloor(PotionOfStrength.class)) {
                     PotionOfStrength strPotion = new PotionOfStrength();
+                    strPotion.identify();
                     strPotion.collect(hero.belongings.backpack);
                     GLog.w("You lost a Strength Potion! Added another to your bag.");
                 }
@@ -389,17 +429,21 @@ public class TutorialLevel extends Level {
                 boolean roseEquipped = (rose != null && rose.isEquipped(hero));
                 boolean roseCursed = (rose != null && rose.cursed);
                 
-                if (!artifactEquipped && roseEquipped && roseCursed) {
-                    artifactEquipped = true;
-                    showTutorialMessage("Cursed Artifact", "As you can see on this artifact its cursed, for that it gives curse removing scrolls, Use the curse removing scroll to get rid of the curse.");
+                // WIN CONDITION: If the rose is in their bag and uncursed, they succeed instantly!
+                if (rose != null && !roseCursed) {
+                    advanceStage();
                 } 
-                else if (artifactEquipped) {
-                    if (!roseCursed) {
-                        advanceStage(); 
-                    } 
-                    else if (hero.belongings.getItem(ScrollOfRemoveCurse.class) == null) {
-                        // FAILSAFE: Direct inject into backpack
+                else {
+                    // MESSAGE TRIGGER: If they put it on while it is still cursed
+                    if (!artifactEquipped && roseEquipped && roseCursed) {
+                        artifactEquipped = true;
+                        showTutorialMessage("Cursed Artifact", "As you can see on this artifact its cursed, for that it gives curse removing scrolls, Use the curse removing scroll to get rid of the curse.");
+                    }
+                    
+                    // FAILSAFE: If they waste the scroll at any time while the rose is still cursed
+                    if (hero.belongings.getItem(ScrollOfRemoveCurse.class) == null && !isItemOnFloor(ScrollOfRemoveCurse.class)) {
                         ScrollOfRemoveCurse rc = new ScrollOfRemoveCurse();
+                        rc.identify();
                         rc.collect(hero.belongings.backpack);
                         GLog.w("You wasted the scroll! Added another Remove Curse scroll to your bag.");
                     }
@@ -415,7 +459,10 @@ public class TutorialLevel extends Level {
             case STAGE_SEARCH:
                 Point cSearch = getRoomCenter(STAGE_SEARCH);
                 int hiddenPos = pointToCell(new Point(cSearch.x, cSearch.y + 1));
-                if (map[hiddenPos] == Terrain.TRAP) advanceStage();
+                Trap hiddenTrap = traps.get(hiddenPos);
+                if (hiddenTrap == null || !hiddenTrap.active || hiddenTrap.visible) {
+                    advanceStage();
+                }
                 break;
             case STAGE_FOOD: 
                 if (!pickedUpRation && hero.belongings.getItem(SmallRation.class) != null) {
@@ -485,9 +532,22 @@ public class TutorialLevel extends Level {
             if (Dungeon.level instanceof TutorialLevel) {
                 TutorialLevel level = (TutorialLevel) Dungeon.level;
                 
+                if (Dungeon.hero != null && Dungeon.hero.pos == level.entrance()) {
+                    GLog.w("You can't leave the dungeon, it was made for you.");
+                    Dungeon.hero.pos = level.entrance() + 1; 
+                    Dungeon.hero.sprite.place(Dungeon.hero.pos);
+                    Dungeon.hero.sprite.idle();
+                }
+                
                 if (tickCounter < 3) {
                     if (tickCounter == 0) {
                         level.closeAllDoors();
+                        
+                        level.transitions.clear();
+                        level.transitions.add(new LevelTransition(level, level.exit, LevelTransition.Type.REGULAR_EXIT));
+                        
+                        level.set(level.entrance(), Terrain.EMPTY);
+                        GameScene.updateMap(level.entrance());
                     }
                     tickCounter++;
                     spend(TICK);
