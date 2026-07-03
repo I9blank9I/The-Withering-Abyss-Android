@@ -1578,6 +1578,23 @@ public class Hero extends Char {
 
 	@Override
 	public void damage( int dmg, Object src ) {
+        // --- DIFFICULTY DMG MODIFIER ---
+        if (src instanceof Mob) {
+            dmg = (int) Math.ceil(dmg * Dungeon.difficulty.dmgMult);
+        }
+        // -------------------------------
+
+		if (buff(TimekeepersHourglass.timeStasis.class) != null
+				|| buff(TimeStasis.class) != null) {
+			return;
+		}
+
+		//TODO hero cannot take damage in the vault tester area
+		if (Dungeon.depth > 15 && Dungeon.branch == 1){
+			dmg = 0;
+		}
+        
+        // ... rest of the existing method remains untouched ...
 		if (buff(TimekeepersHourglass.timeStasis.class) != null
 				|| buff(TimeStasis.class) != null) {
 			return;

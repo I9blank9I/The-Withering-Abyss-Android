@@ -148,40 +148,51 @@ public class HeroSelectScene extends PixelScene {
 		add(title);
 
 		startBtn = new StyledButton(Chrome.Type.GREY_BUTTON_TR, ""){
-			@Override
-			protected void onClick() {
-				super.onClick();
+            @Override
+            protected void onClick() {
+                super.onClick();
 
-				if (GamesInProgress.selectedClass == null) return;
+                if (GamesInProgress.selectedClass == null) return;
 
-				Dungeon.hero = null;
-				Dungeon.daily = Dungeon.dailyReplay = false;
-				Dungeon.initSeed();
-				ActionIndicator.clearAction();
-				InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
+                Dungeon.hero = null;
+                Dungeon.daily = Dungeon.dailyReplay = false;
+                Dungeon.initSeed();
+                ActionIndicator.clearAction();
 
-				Game.switchScene( InterlevelScene.class );
-			}
-		};
-		startBtn.icon(Icons.get(Icons.ENTER));
-		startBtn.setSize(80, 21);
-		startBtn.textColor(Window.TITLE_COLOR);
-		add(startBtn);
-		startBtn.visible = startBtn.active = false;
+                com.badlogic.gdx.Preferences prefs = com.badlogic.gdx.Gdx.app.getPreferences("ShatteredPixelDungeon_Data");
+                boolean tutorialFinished = prefs.getBoolean("tutorial_finished", false);
 
-		infoButton = new IconButton(Icons.get(Icons.INFO)){
-			@Override
-			protected void onClick() {
-				super.onClick();
-				HeroClass cls = GamesInProgress.selectedClass;
-				if (cls != null) {
-					Window info = new WndHeroInfo(GamesInProgress.selectedClass);
-					if (landscape()) {
-						info.offset((int)(w / 6), 0);
-					}
-					ShatteredPixelDungeon.scene().addToFront(info);
-				}
-			}
+                if (!tutorialFinished) {
+                    // First playthrough: Force Easy Mode
+                    Dungeon.difficulty = Dungeon.Difficulty.EASY;
+                    InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
+                    Game.switchScene( InterlevelScene.class );
+                } else {
+                    
+                    // Tutorial finished: Show Difficulty Selection Window
+					com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon.scene().addToFront(new com.shatteredpixel.shatteredpixeldungeon.windows.WndDifficulty(GamesInProgress.selectedClass));
+                }
+            }
+        };
+        startBtn.icon(Icons.get(Icons.ENTER));
+        startBtn.setSize(80, 21);
+        startBtn.textColor(Window.TITLE_COLOR);
+        add(startBtn);
+        startBtn.visible = startBtn.active = false;
+
+        infoButton = new IconButton(Icons.get(Icons.INFO)){
+            @Override
+            protected void onClick() {
+                super.onClick();
+                HeroClass cls = GamesInProgress.selectedClass;
+                if (cls != null) {
+                    Window info = new WndHeroInfo(GamesInProgress.selectedClass);
+                    if (landscape()) {
+                        info.offset((int)(w / 6), 0);
+                    }
+                    ShatteredPixelDungeon.scene().addToFront(info);
+                }
+            }
 
 			@Override
 			protected String hoverText() {

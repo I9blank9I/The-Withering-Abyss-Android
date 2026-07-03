@@ -103,6 +103,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 
+
 public abstract class Mob extends Char {
 
 	{
@@ -110,7 +111,7 @@ public abstract class Mob extends Char {
 		
 		alignment = Alignment.ENEMY;
 	}
-
+	public boolean difficultyScaled = false;
 	public AiState SLEEPING     = new Sleeping();
 	public AiState HUNTING		= new Hunting();
 	public AiState INVESTIGATING= new Investigating();
@@ -224,7 +225,13 @@ public abstract class Mob extends Char {
 	}
 	
 	@Override
-	protected boolean act() {
+    protected boolean act() {
+        // --- DIFFICULTY HP MODIFIER ---
+        if (!difficultyScaled && Dungeon.difficulty != null) {
+            this.HT = Math.max(1, (int)(this.HT * Dungeon.difficulty.hpMult));
+            this.HP = this.HT;
+            difficultyScaled = true;
+        }
 		
 		super.act();
 		

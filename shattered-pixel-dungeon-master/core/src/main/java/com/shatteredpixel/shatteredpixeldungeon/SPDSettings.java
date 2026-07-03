@@ -466,4 +466,15 @@ public class SPDSettings extends GameSettings {
 	public static int fulLScreenMonitor(){
 		return getInt( KEY_FULLSCREEN_MONITOR, 0 );
 	}
+
+	public static final String KEY_HAS_PLAYED = "has_played_before";
+
+public static boolean hasPlayedBefore() {
+    return getBoolean(KEY_HAS_PLAYED, false);
 }
+
+public static void setHasPlayedBefore(boolean value) {
+    put(KEY_HAS_PLAYED, value);
+}
+}
+

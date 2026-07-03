@@ -199,6 +199,25 @@ public class Dungeon {
 
 	public static int gold;
 	public static int energy;
+
+	public enum Difficulty {
+        EASY(0.5f, 0.5f, "Easy"),
+        NORMAL(1.0f, 1.0f, "Normal"),
+        HARD(1.5f, 1.5f, "Hard"),
+        HELL(2.0f, 2.0f, "Hell");
+
+        public final float hpMult;
+        public final float dmgMult;
+        public final String title;
+
+        Difficulty(float hpMult, float dmgMult, String title) {
+            this.hpMult = hpMult;
+            this.dmgMult = dmgMult;
+            this.title = title;
+        }
+    }
+
+    public static Difficulty difficulty = Difficulty.NORMAL;
 	
 	public static HashSet<Integer> chapters;
 
@@ -634,7 +653,8 @@ public class Dungeon {
 	private static final String CHAPTERS	= "chapters";
 	private static final String QUESTS		= "quests";
 	private static final String BADGES		= "badges";
-	
+	private static final String DIFFICULTY  = "difficulty";
+
 	public static void saveGame( int save ) {
 		try {
 			Bundle bundle = new Bundle();
@@ -651,6 +671,7 @@ public class Dungeon {
 			bundle.put( HERO, hero );
 			bundle.put( DEPTH, depth );
 			bundle.put( BRANCH, branch );
+			bundle.put( DIFFICULTY, difficulty.name() );
 
 			bundle.put( GOLD, gold );
 			bundle.put( ENERGY, energy );
@@ -755,7 +776,14 @@ public class Dungeon {
 
 		Dungeon.challenges = bundle.getInt( CHALLENGES );
 		Dungeon.mobsToChampion = bundle.getFloat( MOBS_TO_CHAMPION );
-		
+
+		// --- DIFFICULTY LOAD ---
+        Dungeon.difficulty = bundle.getEnum( DIFFICULTY, Difficulty.class );
+        if (Dungeon.difficulty == null) {
+            Dungeon.difficulty = Difficulty.NORMAL;
+        }
+        // -----------------------
+
 		Dungeon.level = null;
 		Dungeon.depth = -1;
 		
@@ -878,6 +906,13 @@ public class Dungeon {
 		info.daily = bundle.getBoolean( DAILY );
 		info.dailyReplay = bundle.getBoolean( DAILY_REPLAY );
 		info.lastPlayed = bundle.getLong( LAST_PLAYED );
+
+		String diffName = bundle.getString( DIFFICULTY );
+		if (diffName != null && !diffName.isEmpty()) {
+			info.difficulty = Difficulty.valueOf(diffName);
+		} else {
+			info.difficulty = Difficulty.NORMAL;
+		}
 
 		Hero.preview( info, bundle.getBundle( HERO ) );
 		Statistics.preview( info, bundle );
@@ -1103,5 +1138,4 @@ public class Dungeon {
 		return step;
 
 	}
-
 }

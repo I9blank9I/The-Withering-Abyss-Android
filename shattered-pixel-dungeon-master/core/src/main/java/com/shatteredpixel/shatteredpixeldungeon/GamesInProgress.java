@@ -187,6 +187,8 @@ public class GamesInProgress {
 		public boolean dailyReplay;
 		public long lastPlayed;
 
+		public Dungeon.Difficulty difficulty = Dungeon.Difficulty.NORMAL;
+
 		public int level;
 		public int str;
 		public int strBonus;
